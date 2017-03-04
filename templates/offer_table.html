@@ -1,0 +1,50 @@
+{# This assumes that the bootstrap static files are included in the calling template #}
+{% load ncaa_tags %}
+
+<div id='offer offer-{{offer.id}}' class='well span4'>
+    <table class='table table-bordered table-striped table-condensed span3'>
+        <tr><td colspan='2'>Offering</td><td colspan='2'>Asking</td></tr>
+            {% for bid, ask in rows %}
+                <tr>
+                {% if bid %}
+                    {% if bid.team %} {# Hacky way of checking whether this is a team or flat points #}
+                        <td>{% team_link bid.team.team.abbrev_name bid.team.game %}</td><td>{{ bid.count }}</td>
+                    {% else %}
+                        <td>Points</td><td>{{ bid }}</td>
+                    {% endif %}
+                {% else %}
+                    <td colspan='2'></td>
+                {% endif %}
+                {% if ask %}
+                    {% if ask.team %} {# Hacky way of checking whether this is a team or flat points #}
+                        <td>{% team_link ask.team.team.abbrev_name ask.team.game %}</td><td>{{ ask.count }}</td>
+                    {% else %}
+                        <td>Points</td><td>{{ ask }}</td>
+                    {% endif %}
+                {% else %}
+                    <td colspan='2'></td>
+                {% endif %}
+                </tr>
+            {% endfor %}
+        <tr/><tr><td>Total</td><td>{{ bid_total }}</td><td>Total</td><td>{{ ask_total }}</td></tr>
+    </table>
+    {% if offer.is_accepted %}
+        Accepted at: {{ offer.accept_time }}
+    {% else %}
+        Offered at: {{ offer.offer_time }}
+    {% endif %}
+
+    {% if can_claim %}
+        <form method='POST' action='/ncaa/game/{{offer.entry.game.id}}/offer/{{offer.id}}/accept/' class='span2'>
+            {% csrf_token %}
+            <button type='submit' class='btn btn-success'>Accept Offer</button>
+        </form>
+    {% else %}
+        {% if can_cancel %}
+            <form method='POST' action='/ncaa/game/{{offer.entry.game.id}}/offer/{{offer.id}}/cancel/' class='span2'>
+                {% csrf_token %}
+                <button type='submit' class='btn btn-danger'>Cancel Offer</button>
+            </form>
+        {% endif %}
+    {% endif %}
+</div>

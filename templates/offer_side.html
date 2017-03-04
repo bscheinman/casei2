@@ -1,0 +1,14 @@
+{% load ncaa_tags %}
+
+<table class='table table-striped table-condensed'>
+    {% for row in rows %}
+        <tr>
+            {% if row.team %}
+                <td>{% team_link row.team.team.abbrev_name row.team.game %}</td><td>{{ row.count }}</td>
+            {% else %}
+                <td>Points</td><td>{{ row }}</td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+</table>
+

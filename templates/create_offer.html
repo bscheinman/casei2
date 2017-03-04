@@ -1,0 +1,44 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}Create Offer{% endblock title %}
+
+{% block game_scripts %}
+<style type='text/css'>
+    .offer_form_field {
+        width: 90px;
+    }
+</style>
+{% endblock game_scripts %}
+
+{% block game_body %}
+{% if error %}
+    <div class='row'>
+        <div class='alert alert-error'>
+            <a class='close' data-dismiss='alert'>x</a>
+            {{ error }}
+        </div>
+    </div>
+{% endif %}
+<form method='POST' action='/ncaa/game/{{game.id}}/make_offer/' class='well span5'>{% csrf_token %}
+    <table>
+    <tr><td colspan='2'>Offer</td><td colspan='2'>Ask For</td></tr>
+    {% for i in max_offer_size|get_range %}
+        <tr><td><select name='bid_{{i}}_team' class='offer_form_field'>
+            <option value=''></option>
+            {% for team in all_teams %}<option value='{{team.team.abbrev_name}}'>{{ team.team.abbrev_name }}</option>{% endfor %}
+        </select></td>
+        <td><input type='text' name='bid_{{i}}_count' value='0' class='offer_form_field'></td>
+        <td><select name='ask_{{i}}_team' class='offer_form_field'>
+            <option value=''></option>
+            {% for team in all_teams %}<option value='{{team.team.abbrev_name}}'>{{ team.team.abbrev_name }}</option>{% endfor %}
+        </select></td>
+        <td><input type='text' name='ask_{{i}}_count' value='0' class='offer_form_field'></td></tr>
+    {% endfor %}
+    <tr><td>Points</td><td><input type='text' name='bid_points' value='0' class='offer_form_field'>
+    <td>Points</td><td><input type='text' name='ask_points' value='0' class='offer_form_field'></td></tr>
+    </table>
+    <input type='checkbox' name='cancel_on_game' checked='checked'> Cancel on Team Games<br/>
+    <button type='submit' class='btn btn-success'>Submit Offer</button>
+</form>
+{% endblock game_body %}

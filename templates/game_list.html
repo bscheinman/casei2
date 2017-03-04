@@ -1,0 +1,21 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}Join an Existing Game{% endblock title %}
+
+{% block game_body %}
+{% if other_games %}
+    <strong>Games</strong><br/>
+    <div id='game_list' class='well span6'>
+        <ul>
+            {% for game in other_games %}
+                <li>{% game_link game %}</li>
+            {% endfor %}<br/>
+        </ul>
+    </div>
+{% else %}
+    <div class='alert alert-error span4'>
+        No other games exist!
+    </div>
+{% endif %}
+{% endblock game_body %}

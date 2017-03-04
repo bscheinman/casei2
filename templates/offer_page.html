@@ -1,0 +1,30 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}Trade Offer #{{offer.id}}{%endblock title %}
+
+{% block game_body %}
+{% if not offer.is_active %}
+    <div class='row'>
+        <div class='alert alert-warning span3'>
+            This offer has been cancelled
+        </div>
+    </div>
+{% else %}
+    {% if offer.is_accepted %}
+        <div class='row'>
+            <div class='alert alert-warning span5'>
+                This offer was accepted by {{ offer.accepting_user.entry_name }} at {{ offer.accept_time }}
+            </div>
+        </div>
+    {% endif %}
+{% endif %}
+<div id='table' class='span4'>
+    {% render_offer_table offer self_entry %}
+</div>
+{% if error %}
+    <div id='error' class='alert alert-error span4 offset1'>
+        {{ error }}
+    </div>
+{% endif %}
+{% endblock game_body %}

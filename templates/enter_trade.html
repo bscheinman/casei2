@@ -1,0 +1,18 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}Enter Trade{% endblock title %}
+
+{% block game_body %}
+    <form method='POST' action='/ncaa/game/{{game.id}}/do_trade/'>
+        {% csrf_token %}
+        <select name='team'>
+            {% team_options all_teams %}
+        </select>
+        <input type='radio' name='side' value='buy'>Buy
+        <input type='radio' name='side' value='sell'>Sell
+        Price <input type='text' name='price'>
+        Quantity <input type='text' name='quantity'>
+        <button type='submit' class='btn btn-success'>Submit Order</button>
+    </form>
+{% endblock game_body %}

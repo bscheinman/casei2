@@ -1,0 +1,11 @@
+<script type='text/javascript'>
+    function show_change_form(order_id, team, quantity, price, side, cog) {
+        document.getElementById('change_id_field').value = order_id;
+        $('#change_team_field').html(team);
+        document.getElementById('change_quantity_field').value = quantity;
+        document.getElementById('change_price_field').value = price;
+        $('#change_side_field').html(side);
+        document.getElementById('change_cog_field').checked = cog;
+        $('#change_modal').modal();
+    }
+</script>

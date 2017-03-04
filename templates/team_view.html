@@ -1,0 +1,173 @@
+{% extends 'trade_tab_view.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{{ team.full_name }} Profile{% endblock title %}
+
+{% block tab_scripts %}
+    <script type='text/javascript'>
+        function OnTradeResponse(data) {
+            if (data.success)
+                window.location = '/ncaa/game/{{game.id}}/team/{{team.abbrev_name}}/?start_tab=stock_tab';
+            else {
+                var errorString = data.errors.join('\n');
+                var field_errors = data.field_errors;
+                for (var key in field_errors)
+                    errorString += '\n' + field_errors[key];
+                alert(errorString);
+            }
+        }
+
+        $(document).ready(function() {
+            var options = {
+                dataType: 'json',
+                success: OnTradeResponse
+            };
+
+            $('#tradeForm').ajaxForm(options);
+            $('#changeForm').ajaxForm(options);
+            $('.cancelForm').ajaxForm(options);
+        });
+    </script>
+    {% include 'accept_form_confirmation.html' %}
+    {% include 'change_form_script.html' %}
+{% endblock tab_scripts %}
+
+{% block page_header %}
+<h2>{{ team.full_name }} ({{ team.abbrev_name }})</h2>
+{% endblock page_header %}
+
+{% block main_tab %}
+    <div class='row' style='margin-left:30px; margin-bottom:10px;'>
+        <span style='font-weight:bold; font-size:16px;'>Volume: {{ game_team.volume }}</span>
+    </div>
+    <div id='score_counts' class='span5'>
+        <table class='table table-bordered table-striped table-condensed'>
+            <tr><td></td><td>Count</td><td>Points</td></tr>
+            {% for scoreType, count, row_score in score_counts %}
+                <tr><td>{{ scoreType }}</td>
+                <td>{{ count }}</td>
+                <td>{{ row_score }}</td></tr>
+            {% endfor %}
+            <tr><td>Total</td><td></td><td>{{ game_team.score }}</td></tr>
+        </table><br/>
+    </div>
+    <div id='top_owners' class='well span3'>
+        <strong>Top Owners</strong><br/>
+        {% for owner, count in top_owners %}
+            {% entry_link owner %}: {{ count }} shares<br/>
+        {% endfor %}
+    </div>
+{% endblock main_tab %}
+{% block card_tab %}
+    <div id='trades' class='accordion'>
+        <div class='accordion-group'>
+            <div class='accordion-heading'>
+                <a class='accordion-toggle' data-toggle='collapse' data-parent='#trades' href='#offering_accordion'>
+                    Trades Offering {{ team.full_name }} ({{ offering_trades|length }})</a>
+            </div>
+            <div id='offering_accordion' class='accordion-body collapse'>
+                <div class='accordion-inner'>
+                    {% if offering_trades %}
+                        {% include 'offer_list.html' with offers=offering_trades %}
+                    {% else %}
+                        <em>None</em>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class='accordion-group'>
+            <div class='accordion-heading'>
+                <a class='accordion-toggle' data-toggle='collapse' data-parent='#trades' href='#asking_accordion'>
+                    Trades Asking for {{ team.full_name }} ({{ asking_trades|length }})</a>
+            </div>
+            <div id='asking_accordion' class='accordion-body collapse'>
+                <div class='accordion-inner'>
+                    {% if asking_trades %}
+                        {% include 'offer_list.html' with offers=asking_trades %}
+                    {% else %}
+                        <em>None</em>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class='accordion-group'>
+            <div class='accordion-heading'>
+                <a class='accordion-toggle' data-toggle='collapse' data-parent='#trades' href='#recent_accordion'>
+                    Recent {{ team.full_name }} Trades ({{ recent_trades|length }})</a>
+            </div>
+            <div id='recent_accordion' class='accordion-body collapse'>
+                <div class='accordion-inner'>
+                    {% if recent_trades %}
+                        {% include 'offer_list.html' with offers=recent_trades show_accepts='True' %}
+                    {% else %}
+                        <em>None</em>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stock_tab %}
+    <div class='row' style='margin-bottom:10px;'>
+        <div id='market_data' class='span2 well'>
+            Bid: {{ security.get_bid }}<br/>
+            Ask: {{ security.get_ask }}<br/>
+            Last: {{ security.get_last }}<br/>
+            Volume: {{ game_team.volume }}
+        </div>
+        <div id='bbo' class='span6 well'>
+            <table class='table table-striped table-condensed table-bordered'>
+                <col width='1*'>
+                <col width='1*'>
+                <col width='1*'>
+                <col width='1*'>
+                <col width='1*'>
+                <col width='1*'>
+                <tr><td colspan='3'>Bids</td><td colspan='3'>Asks</td></tr>
+                <tr><td>Entry</td><td>Size</td><td>Price</td><td>Price</td><td>Size</td><td>Entry</td></tr>
+                    {% for bid, ask in security.get_bbo_table %}
+                        <tr>
+                            {% if bid %}
+                                <td>{% order_format bid self_entry bid.entry.entry_name %}</td>
+                                <td>{% order_format bid self_entry bid.quantity_remaining %}</td>
+                                <td>{% order_format bid self_entry bid.price %}</td>
+                            {% else %}
+                                <td colspan='3'/>
+                            {% endif %}
+                            {% if ask %}
+                                <td>{% order_format ask self_entry ask.price %}</td>
+                                <td>{% order_format ask self_entry ask.quantity_remaining %}</td>
+                                <td>{% order_format ask self_entry ask.entry.entry_name %}</td>
+                            {% else %}
+                                <td colspan='3'/>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+            </table>
+        </div>
+        <div class='span2'>
+            <a data-toggle='modal' href='#order_placer' class='btn btn-primary'>Place Order</a>
+        </div>
+    </div>
+
+    {% ordercordion open_orders executions game self_entry %}
+
+    <div id='order_placer' class='modal hide fade' style='width:250px;'>
+        <div class='modal-header'>
+            <a class='close' data-dismiss='modal'>x</a>
+        </div>
+        <div class='modal-body'>
+            {% trade_form game team %}
+        </div>
+    </div>
+
+    <div id='change_modal' class='modal hide fade' style='width:250px;'>
+        <div class='modal-header'>
+            <a class='close' data-dismiss='modal'>x</a>
+        </div>
+        <div class='modal-body'>
+            {% include 'change_order_form.html' %}
+        </div>
+    </div>
+{% endblock stock_tab %}

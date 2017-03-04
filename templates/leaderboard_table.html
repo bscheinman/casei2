@@ -1,0 +1,9 @@
+{% load ncaa_tags %}
+
+<table class='table table-striped table-bordered table-condensed span4'>
+    <tr><td>Entry</td><td>Score</td></tr>
+    {% for leader in leaders %}
+        <tr><td>{% entry_link leader %}</td>
+        <td>{{ leader.score }}</td></tr>
+    {% endfor %}
+</table>

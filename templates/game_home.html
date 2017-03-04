@@ -1,0 +1,65 @@
+{% extends 'trade_tab_view.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{{ game.name }}{% endblock title %}
+
+{% block page_header %}
+    <h2>{{ game.name }}</h2>
+{% endblock page_header %}
+
+{% block main_tab %}
+    {% if self_entry %}
+        <h3>Leaderboard</h3>
+        {% leaderboard_table leaders %}<br/>
+    {% endif %}
+
+    <div class='row'>
+        <div id='game_settings' class='well span4'>
+            Game Settings:<br/>
+            Game Type = {{ game.game_type.name }}<br/>
+            Trading Types = {{ game.trade_type_string }}<br/>
+            Position Limit = 
+            {% if game.position_limit %}{{ game.position_limit }}{% else %}None{% endif %}<br/>
+            Points Short Limit =
+            {% if game.points_limit %}{{ game.points_limit }}{% else %}None{% endif %}<br/>
+        </div><br/>
+    </div>
+
+    {% if not self_entry %}
+        <div class='well span4'>
+            {% if error %}
+                <div class='span3 alert alert-error'>
+                    <a class='close' data-dismiss='alert' >x</a>
+                    {{ error }}
+                </div>
+            {% endif %}
+            <form method='POST' action='/ncaa/join_game/'>{% csrf_token %}
+                Entry Name: <input type='text' name='entry_name'> 
+                {% if game.password %}
+                    <br/>Password: <input type='password' name='password'>
+                {% endif %}
+                <input type='hidden' name='game_id' value='{{game.id}}'>
+                <button type='submit' class='btn btn-success'>Join Game</button>
+            </form>
+        </div>
+    {% endif %}
+{% endblock main_tab %}
+
+
+{% block card_tab %}
+    <h3>Recent Trades</h3>
+    {% if card_executions %}
+        {# This is a really hacky way of passing 'True' because it's actually a string here and passing 'False' or any other string would do the same thing #}
+        {% include 'offer_list.html' with offers=card_executions show_accepts='True' %}
+    {% endif %}
+{% endblock card_tab %}
+
+
+{% block stock_tab %}
+    {% if stock_executions %}
+        <div class='well' id='stock_executions'>
+            <h3>Recent Trades</h3>
+            {% execution_table stock_executions game self_entry %}
+        </div>
+    {% endif %}
+{% endblock stock_tab %}

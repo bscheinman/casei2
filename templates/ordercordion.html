@@ -1,0 +1,26 @@
+{% load ncaa_tags %}
+
+<div id='ordercordion' class='accordion'>
+    <div class='accordion-group'>
+        <div class='accordion-heading'>
+            <a class='accordion-toggle' data-toggle='collapse' data-parent='#ordercordion' href='#open_order_accordion'>
+                Your Open Orders ({{ open_orders|length }})</a>
+        </div>
+        <div id='open_order_accordion' class='accordion-body collapse'>
+            <div class='accordion-inner'>
+                {% order_table open_orders game self_entry %}
+            </div>
+        </div>
+    </div>
+    <div class='accordion-group'>
+        <div class='accordion-heading'>
+            <a class='accordion-toggle' data-toggle='collapse' data-parent='#ordercordion' href='#execution_accordion'>
+                Recent Executions</a>
+        </div>
+        <div id='execution_accordion' class='accordion-body collapse'>
+            <div class='accordion-inner'>
+                {% execution_table executions game self_entry %}
+            </div>
+        </div>
+    </div>
+</div>

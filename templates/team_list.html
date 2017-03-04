@@ -1,0 +1,115 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{{ game.name }} Team List{% endblock title %}
+
+{% block game_scripts %}
+    <script type='text/javascript'>
+        function OnTradeResponse(data) {
+            if (data.success)
+                location.reload();
+            else {
+                var errorString = data.errors.join('\n');
+                var field_errors = data.field_errors;
+                for (var key in field_errors)
+                    errorString += '\n' + field_errors[key];
+                alert(errorString);
+            }
+        }
+
+        function show_placer(team_name, side, price) {
+            //$('#trade_title').html("<h4>Trade " + team_name + "</h4>");
+            document.getElementById('team_id_field').value = team_name;
+            var radioButtons = document.forms['tradeForm'].elements['side'];
+            for (var i = 0 ; i < radioButtons.length ; ++i)
+                radioButtons[i].checked = radioButtons[i].value == side;
+            if (price != 0.0)
+                document.getElementById('price_field').value = price;
+            else
+                document.getElementById('price_field').value = '';
+            document.getElementById('quantity_field').value = '';
+            $('#order_placer').modal();
+        }
+
+        $(document).ready(function() {
+            var options = {
+                dataType: 'json',
+                success: OnTradeResponse
+            };
+
+            $('#tradeForm').ajaxForm(options);
+        });
+    </script>
+{% endblock %}
+
+{% block game_body %}
+<div class='span8'>
+    <table class='table table-bordered table-striped table-condensed sortable'>
+        <thead><tr>
+            <th>Team</th>
+            <th>Volume</th>
+            <th>Points</th>
+            {% if game.supports_stocks %}
+                <th>Last</th>
+                <th class='sorttable_nosort' width='50'></th>
+                <th class='sorttable_nosort'>Bid Size</th>
+                <th width='65'>Bid</th>
+                <th width='65'>Ask</th>
+                <th class='sorttable_nosort'>Ask Size</th>
+                <th class='sorttable_nosort' width='50'></th>
+            {% endif %}
+        </tr></thead>
+        {% for team, security in rows %}
+            <tr>
+                {% if game.supports_stocks %}
+                    <td>{% team_link team.team.abbrev_name game 'stock_tab' %} </td>
+                {% else %}
+                    <td>{% team_link team.team.abbrev_name game %} </td>
+                {% endif %}
+                <td>{{ team.volume }}</td>
+                <td>{{ team.score }}</td>
+                {% if game.supports_stocks %}
+                    <td>{{ security.get_last }}</td>
+                    {% with bid=security.get_bid_order %}
+                        <td><button class='btn btn-success' onclick='show_placer("{{team.team.abbrev_name}}", "buy", {{bid.price}})'>Buy</button></td>
+                        <td>{{ security.get_bid_size }}</td>
+                        <td><span{% if self_entry == bid.entry %} style='font-weight:bold;'{% endif %}>{{ bid.price }}</span></td>
+                    {% endwith %}
+                    {% with ask=security.get_ask_order %}
+                        <td><span{% if self_entry == ask.entry %} style='font-weight:bold;'{% endif %}>{{ ask.price }}</span></td>
+                        <td>{{ security.get_ask_size }}</td>
+                        <td><button class='btn btn-danger' onclick='show_placer("{{team.team.abbrev_name}}", "sell", {{ask.price}})'>Sell</button></td>
+                    {% endwith %}
+                {% endif %}
+            </tr>
+        {% endfor %}
+        {% if game.supports_stocks %}
+            <tfoot>
+                <tr>
+                    <td>Total</td>
+                    <td>{{ volume_total }}</td>
+                    <td>{{ points_total }}</td>
+                    <td>{{ last_total }}</td>
+                    <td></td>
+                    <td></td>
+                    <td>{{ bid_total }}</td>
+                    <td>{{ ask_total }}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        {% endif %}
+    </table>
+</div>
+
+<div id='order_placer' class='modal hide fade' style='width:250px;'>
+    <div class='modal-header'>
+        <div id='trade_title'></div>
+        <a class='close' data-dismiss='modal'>x</a>
+    </div>
+    <div class='modal-body'>
+        {% trade_form game %}
+    </div>
+</div>
+
+{% endblock game_body %}

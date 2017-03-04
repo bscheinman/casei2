@@ -1,0 +1,39 @@
+{% load ncaa_tags %}
+
+<table class='table table-bordered table-striped table-condensed'>
+    <thead><tr><th>Placed By</th><th>Time</th>
+    {% if show_accepts %}<th>Accepted By</th><th>Accept Time</th>{% endif %}
+    <th>Offering</th><th>Asking</th><th>Actions</th></tr></thead>
+    {% for offer in offers %}
+        <tr>
+            <td>{% entry_link offer.entry %}</td>
+            <td>{{ offer.offer_time|date:'m/d/y H:i:s' }}</td>
+            {% if show_accepts %}
+                {% if offer.is_accepted %}
+                    <td>{% entry_link offer.accepting_user %}</td>
+                    <td>{{ offer.accept_time|date:'m/d/y H:i:s' }}</td>
+                {% else %}
+                    <td></td><td></td>
+                {% endif %}
+            {% endif %}
+            <td>{% offer_side offer.bid_side %}</td>
+            <td>{% offer_side offer.ask_side %}</td>
+            <td>
+                {% if offer.is_active and not offer.is_accepted and self_entry %}
+                    {% if offer.entry == self_entry %}
+                        <form method='POST' action='/ncaa/game/{{offer.entry.game.id}}/offer/{{offer.id}}/cancel/'>
+                            {% csrf_token %}
+                            <button type='submit' class='btn btn-danger'>Cancel Offer</button>
+                        </form>
+                    {% else %}
+                        <form method='POST' action='/ncaa/game/{{offer.entry.game.id}}/offer/{{offer.id}}/accept/' class='acceptForm'>
+                            {% csrf_token %}
+                            <button type='submit' class='btn btn-success'>Accept Offer</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+

@@ -1,0 +1,11 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{{ game.name }} Leaderboard {% endblock title %}
+
+{% block game_body %}
+    <h3>{{ game.name }} Leaderboard</h3>
+    <div id='leaders_table'>
+        {% leaderboard_table leaders %}
+    </div>
+{% endblock game_body %}

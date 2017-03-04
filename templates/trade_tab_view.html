@@ -1,0 +1,39 @@
+{% extends 'game_base.html' %}
+
+{% block game_body %}
+{% block page_header %}{% endblock page_header %}
+
+<ul class='nav nav-tabs'>
+    <li class='active'><a href='#overview' data-toggle='tab' id='overview_expander'>Overview</a></li>
+    {% if game.supports_cards %}<li><a href='#card_tab' data-toggle='tab' id='card_tab_expander'>Card Trading</a></li>{% endif %}
+    {% if game.supports_stocks %}<li><a href='#stock_tab' data-toggle='tab' id='stock_tab_expander'>Stock Trading</a></li>{% endif %}
+</ul>
+
+<div class='tab-content'>
+    <div class='tab-pane active' id='overview'>
+        {% block main_tab %}{% endblock main_tab %}
+    </div>
+    {% if game.supports_cards %}
+        <div class='tab-pane' id='card_tab'>
+            {% block card_tab %}{% endblock card_tab %}
+        </div>
+    {% endif %}
+    {% if game.supports_stocks %}
+        <div class='tab-pane' id='stock_tab'>
+            {% block stock_tab %}{% endblock stock_tab %}
+        </div>
+    {% endif %}
+</div>
+{% endblock game_body %}
+
+{% block game_scripts %}
+    <script type='text/javascript'>
+        {% if start_tab %}
+            $(document).ready(function() {
+                $('#{{ start_tab }}_expander').click();
+            });
+        {% endif %}
+    </script>
+    {% block tab_scripts %}{% endblock tab_scripts %}
+{% endblock game_scripts %}
+

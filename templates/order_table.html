@@ -1,0 +1,26 @@
+{% load ncaa_tags %}
+
+<table class='table table-bordered table-striped table-condensed sortable'>
+    <thead><tr><td>Time</td><td>Team</td><td>Side</td><td>Quantity Remaining</td><td>Price</td><td>CoG</td><td class='sorttable_nosort'>Actions</td></tr></thead>
+    {% for order in orders %}
+        <tr>
+            <td>{{ order.placed_time|date:'m/d/y H:i:s' }}</td>
+            <td>{% team_link order.security.name game %}</td>
+            <td>{{ order.side_name }}</td>
+            <td>{{ order.quantity_remaining }}</td>
+            <td>{{ order.price }}</td>
+            <td>{% if order.cancel_on_game %}x{% endif %}</td>
+            <td>
+                {% if order.entry == self_entry and order.is_active and order.quantity_remaining > 0%}
+                    <button class='btn' onclick='show_change_form("{{order.order_id}}","{{order.security.name}}","{{order.quantity_remaining}}",
+                        "{{order.price}}","{{order.side_name}}",{{order.cancel_on_game|js_bool}})'>Change Order</button>
+                    <form class='cancelForm' method='POST' action='/ncaa/game/{{game.id}}/cancel_order/' style='display:inline'>
+                        {% csrf_token %}
+                        <input type='hidden' name='order_id' value='{{ order.order_id }}'>
+                        <button type='submit' class='btn btn-danger'>Cancel Order</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>

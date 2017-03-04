@@ -1,0 +1,22 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{% ci_text %} Trading Game{% endblock title %}
+
+{% block game_body %}
+<h2>{% ci_text %} Trading Game</h2>
+
+{% if login_error %}
+    <div class='alert alert-error span4 offset8'>
+        <a class='close' data-dismiss='alert'>x</a>
+        {{ login_error }}
+    </div>
+{% endif %}
+
+{% if user.is_authenticated %}
+    <div class='alert alert-info span4'>
+        <a class='close' data-dismiss='alert'>x</a>
+        Welcome to the {% ci_text %} trading game!  To join or create new games, use the links above, or view your existing entries shown on the left
+    </div>
+{% endif %}
+{% endblock game_body %}

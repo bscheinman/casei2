@@ -1,0 +1,10 @@
+<form id='changeForm' method='POST' action='/ncaa/game/{{game.id}}/change_order/'>
+    {% csrf_token %}
+    <input type='hidden' name='order_id' id='change_id_field'>
+    Team: <b><span id='change_team_field'></span></b><br/>
+    Shares <input type='text' name='quantity' style='width:75px;' id='change_quantity_field'><br/>
+    Price <input type='text' name='price' style='width:75px;' id='change_price_field'><br/>
+    Side: <b><span id='change_side_field'></span></b><br/>
+    <input type='checkbox' name='cancel_on_game' id='change_cog_field'> Cancel on Team Game
+    <button type='submit' class='btn btn-primary'>Submit Change</button>
+</form>

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load ncaa_tags %}
+
+{% block scripts %}
+<link href='/static/bootstrap/css/bootstrap.min.css' rel='stylesheet'>
+<style type='text/css'>
+    body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+    }
+    .sidebar-nav {
+        padding :9px 0;
+    }
+</style>
+{% endblock scripts %}
+
+{% block body %}
+{% if self_entry %}
+<div class='navbar navbar-fixed-top'>
+    <div class='navbar-inner'>
+        <div class='container-fluid'>
+            <a class='brand' href='/'>{% ci_text %}</a>
+            <ul class='nav'>
+                <li><a href='/ncaa/'>Home</a>
+                <li><a href='/ncaa/game_list/'>Join Game</a>
+                <li><a href='/ncaa/create_game/'>Create Game</a>
+            </ul>
+            <p class='navbar-text pull-right'>Logged in as {{ user.username }} <a href='/logout/'>Logout</a></p>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class='container-fluid'>
+    <div class='row-fluid'>
+        <div class='span2'>
+            <div class='well sidebar-nav'>
+                <ul class='nav nav-list'>
+                    <li class='nav-header'>{{ game.name }}</li>
+                    <li><a href='/ncaa/game/{{game.id}}/marketplace/'>Marketplace</a></li>
+                    <li><a href='/ncaa/game/{{game.id}}/leaderboard/'>Leaderboard</a></li>
+                    <li>
+                        <div class='entry-select btn-group'>
+                            <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Goto Entry <span class='caret'></span></a>
+                            <ul class='dropdown-menu'>
+                                {% for entry in game.entries.all %}
+                                    <li><a href='/ncaa/game/{{game.id}}/entry/{{entry.id}}/'>{{ entry.entry_name }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class='span10'>
+            {% block game_body %}{% endblock game_body %}
+        </div>
+    </div>
+</div>
+
+<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
+<script src='/static/bootstrap/js/bootstrap.min.js'></script>
+{% endblock body %}

@@ -1,0 +1,18 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{{ game.name }} Marketplace{% endblock title %}
+{% block game_body %}
+    <h2>{{ game.name }} Marketplace</h2>
+
+    {% if offers %}
+        {% include 'offer_list.html' %}
+    {% else %}
+        <h3>No Open Offers</h3>
+    {% endif %}
+{% endblock game_body %}
+
+{% block game_scripts %}
+    {% include 'accept_form_confirmation.html' %}
+{% endblock game_scripts %}
+

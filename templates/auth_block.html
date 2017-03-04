@@ -1,0 +1,14 @@
+{% if user.is_authenticated %}
+Welcome, {{ user.username }}!
+
+<a href='#' class='menu'>{{ user.username }}</a>
+<form method='POST' action='/do_logout/'>{% csrf_token %}
+    <button type='submit' class='btn btn-primary'>Logout</button>
+</form>
+{% else %}
+<form method='POST' action='/do_login/' class='well form-inline'>{% csrf_token %}
+    <input type='text' name='username' class='input-small' placeholder='Username'>
+    <input type='password' name='password' class='input-small' placeholder='Password'>
+    <button type='submit' class='btn btn-primary'>Sign In</button>
+</form>
+{% endif %}

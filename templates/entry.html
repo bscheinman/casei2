@@ -1,0 +1,91 @@
+{% extends 'trade_tab_view.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{{ entry.entry_name }}{% endblock title %}
+
+{% block tab_scripts %}
+    <script type='text/javascript'>
+        function OnCancelResponse(data) {
+            if (data.success)
+                window.location = '/ncaa/game/{{game.id}}/entry/{{entry.id}}/?start_tab=stock_tab';
+            else
+                alert(data.errors.join('\n'));
+        }
+
+        $(document).ready(function() {
+            var options = {
+                dataType: 'json',
+                success: OnCancelResponse
+            };
+
+            $('.cancelForm').ajaxForm(options);
+            $('#changeForm').ajaxForm(options);
+        });
+
+        function ToggleEliminatedRows(show) {
+            $('.eliminated-row').css('display', show ? '' : 'none');
+        }
+    </script>
+    {% include 'accept_form_confirmation.html' %}
+    {% include 'change_form_script.html' %}
+{% endblock tab_scripts %}
+
+{% block page_header %}
+<h2>{{ entry.entry_name }}</h2>
+Score: {{ entry.score }}<br/>
+{% endblock page_header %}
+
+{% block main_tab %}
+<div id='holdings' class='well span4'>
+    <h3>Holdings</h3>
+    <table class='table table-bordered table-striped table-condensed sortable'>
+        <tr>
+        <td>Shares</td><td>Team</td><td>Points/Share</td><td>Total Points</td></tr>
+        {% for team, shares, team_points in teams %}
+            <tr{% if team.team.is_eliminated %} class='eliminated-row'{% endif %}>
+            <td>{{ shares }}</td>
+            <td>
+                <span{% if team.team.is_eliminated %} style='text-decoration:line-through'{% endif %}>
+                {% team_link team.team.abbrev_name entry.game %}</span>
+            </td>
+            <td>{{ team.score }}</td>
+            <td>{{ team_points }}</td>
+            </tr>
+        {% endfor %}
+        <tfoot>
+            <tr><td colspan='3'>Tradable Points</td><td>{{ entry.extra_points }}</td></tr>
+            <tr><td colspan='3'><b>Total</b></td><td>{{ entry.score }}</td></tr>
+        </tfoot>
+    </table>
+    <input type='checkbox' checked='checked' onclick='ToggleEliminatedRows(this.checked)'>Show Eliminated Teams
+</div>
+{% endblock main_tab %}
+
+{% block card_tab %}
+    {% if entry == self_entry %}
+        <h3>Open Card-Style Offers</h3>
+        {% if card_offers %}
+            {% include 'offer_list.html' with offers=card_offers %}
+        {% else %}
+            (None)
+        {% endif %}
+    {% endif %}
+{% endblock card_tab %}
+
+{% block stock_tab %}
+    {% if entry == self_entry %}
+        {% ordercordion stock_orders stock_executions game entry %}
+    {% else %}
+        {% execution_table stock_executions game entry %}
+    {% endif %}
+
+    <div id='change_modal' class='modal hide fade' style='width:250px;'>
+        <div class='modal-header'>
+            <div id='trade_title'></div>
+            <a class='close' data-dismiss='modal'>x</a>
+        </div>
+        <div class='modal-body'>
+            {% include 'change_order_form.html' %}
+        </div>
+    </div>
+{% endblock stock_tab %}

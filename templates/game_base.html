@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load ncaa_tags %}
+
+{% block scripts %}
+<link href='/static/bootstrap/css/bootstrap.min.css' rel='stylesheet'>
+<style type='text/css'>
+    body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+    }
+    .sidebar-nav {
+        padding :9px 0;
+    }
+</style>
+{% block head_scripts %}{% endblock head_scripts %}
+{% endblock scripts %}
+
+{% block body %}
+<div class='navbar navbar-fixed-top'>
+    <div class='navbar-inner'>
+        <div class='container'>
+            <a class='brand' href='/'>{% ci_text %}</a>
+            <ul class='nav'>
+                <li><a href='/ncaa/'>Home</a>
+                <li><a href='/ncaa/game_list/'>Join Game</a>
+                <li><a href='/ncaa/create_game/'>Create Game</a>
+            </ul>
+            <p class='navbar-text pull-right'>
+                {% if user.is_authenticated %}
+                    Logged in as {{ user.username }} <a href='/do_logout/'>Logout</a>
+                {% else %}
+                    <a data-toggle='modal' href='#loginModal' class='btn btn-primary'>Login</a>
+                    <a href='/signup/' class='btn'>Sign Up</a>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+<div class='container-fluid'>
+    <div class='row-fluid'>
+        <div class='span2'>
+            {% if user.is_authenticated %}
+            <div class='well sidebar-nav'>
+                <ul class='nav nav-list'>
+                    {% if user_games %}
+                        <li>
+                            <div class='game-select btn-group'>
+                                <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Your Games <span class='caret'></span></a>
+                                <ul class='dropdown-menu'>
+                                    {% for user_game in user_games %}
+                                        <li><a href='/ncaa/game/{{user_game.id}}/'>{{ user_game.name }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li><a href='/ncaa/game_list/'>Join Game</a></li>
+                        <li><a href='/ncaa/create_game/'>Create Game</a></li>
+                    {% endif %}
+                    {% if game %}
+                        <li class='nav-header'>{{ game.name }}</li>
+                        <li><a href='/ncaa/game/{{game.id}}/'>Home</a></li>
+                        <li><a href='/ncaa/game/{{game.id}}/entry/{{self_entry.id}}/'>{{ self_entry.entry_name }}</a></li>
+                        <li><a href='/ncaa/game/{{game.id}}/scoring_settings/'>Scoring Settings</a></li>
+                        <li><a href='/ncaa/game/{{game.id}}/team_list/'>Team List</a></li>
+                        {% if game.supports_stocks %}
+                        	<li><a href='/ncaa/game/{{game.id}}/market_maker/'>Market Maker</a></li>
+                        {% endif %}
+                        <li><a href='/ncaa/game/{{game.id}}/leaderboard/'>Leaderboard</a></li>
+                        {% if game.supports_cards %}
+                            <li class='nav-header'>Card-Style Trading</li>
+                            <li><a href='/ncaa/game/{{game.id}}/marketplace/'>Marketplace</a></li>
+                            <li><a href='/ncaa/game/{{game.id}}/create_offer/'>Create Offer</a></li>
+                        {% endif %}
+                        <li>
+                            <div class='entry-select btn-group'>
+                                <a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>{{ game.name }} Entries <span class='caret'></span></a>
+                                <ul class='dropdown-menu'>
+                                    {% for entry in game.entries.all %}
+                                        {% if entry != self_entry %}
+                                            <li><a href='/ncaa/game/{{game.id}}/entry/{{entry.id}}/'>{{ entry.entry_name }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        <div class='span10'>
+            {% block game_body %}{% endblock game_body %}
+        </div>
+    </div>
+</div>
+
+{% if not user.is_authenticated %}
+    <div class='row'>
+        <div id='loginModal' class='modal hide fade'>
+            <div class='modal-header'>
+                <a class='close' data-dismiss='modal'>x</a>
+                <h3>Log In</h3>
+            </div>
+            <div class='modal-body'>
+                <form id='login_form' method='POST' action='/do_login/' class='well'>{% csrf_token %}
+                    <input type='hidden' name='redirect_target' value='ncaa_home'>
+                    <input type='text' name='username' placeholder='username'>
+                    <input type='password' name='password' placeholder='password'>
+                    <button id='login_form_submit' type='submit' class='btn btn-primary'>Log In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
+<script src='/static/bootstrap/js/bootstrap.min.js'></script>
+<script src='/static/jquery.form.js'></script>
+<script src='/static/sorttable.js'></script>
+{% block game_scripts %}{% endblock game_scripts %}
+{% endblock body %}

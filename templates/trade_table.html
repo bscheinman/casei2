@@ -1,0 +1,17 @@
+<table class='table table-bordered table-striped table-condensed sortable'>
+    <thead><tr><td>Trade Id</td><td>Time</td><td>Quantity Remaining</td><td>Price</td><td class='sorttable_nosort'>Actions</td></tr></thead>
+    {% for order in orders %}
+        <tr>
+            <td>{{ order.order_id }}</td>
+            <td>{{ order.placed_time }}</td>
+            <td>{{ order.quantity_remaining }}</td>
+            <td>{{ order.price }}</td>
+            <td>
+                {% if self_entry.entry_name == order.placer_name and order.quantity_remaining > 0%}
+                    <button class='btn'>Change Order</button>
+                    <button class='btn btn-error'>Cancel Order</button>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>

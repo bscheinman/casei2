@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load ncaa_tags %}
+
+{% block title %}{% ci_text %}{% endblock title %}
+
+{% block body %}
+{% ci_text %}<br/>
+{% if error %}<strong style='color:red;'>{{ error }}</strong><br/>{% endif %}
+{% auth_block user %}
+
+<a href='/ncaa/'>NCAA Trading Card Game</a>
+{% endblock body %}

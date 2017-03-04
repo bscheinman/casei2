@@ -1,0 +1,77 @@
+{% extends 'game_base.html' %}
+{% load ncaa_tags %}
+
+{% block game_scripts %}
+	<script type='text/javascript'>
+		function on_trade_response(data) {
+			if (data.success) {
+				location.reload();
+			} else {
+				alert(data.errors.join('\n'));
+			}
+		}
+
+		$(document).ready(function() {
+			var options = {
+				dataType: 'json',
+				success: on_trade_response
+			};
+
+			$('#mm_form').ajaxForm(options);
+		})
+	</script>
+{% endblock game_scripts %}
+
+{% block title %}Market Maker{% endblock title %}
+
+{% block game_body %}
+<div class='span8'>
+	<form id='mm_form' method='POST' action='/ncaa/game/{{game.id}}/make_market/'>
+		{% csrf_token %}
+	    <table class='table table-bordered table-striped table-condensed sortable'>
+	        <thead><tr>
+	        	<th>Team</th>
+	        	<th>Last</th>
+	        	<th>Volume</th>
+	            <th>Your Position</th>
+	            <th>Apply</th>
+	            <th width='25'>Bid Size</th>
+	            <th width='25'>Bid</th>
+	            <th>Market Bid</th>
+	            <th>Market Ask</th>
+	            <th width='25'>Ask</th>
+	            <th width='25'>Ask Size</th>
+	        </tr></thead>
+	        {% for team, security, position, user_bid, user_ask in rows %}
+	        	<tr>
+	        		<td>{% team_link team.team.abbrev_name game 'stock_tab' %}</td>
+	        		<td>{{ security.get_last }}</td>
+	        		<td>{{ team.volume }}</td>
+        			<td>{{ position }}</th>
+	        		<td><input type='checkbox' name='apply_team_{{team.team.abbrev_name}}'/></td>
+        			<td><input style='width:50px;' name='bid_size_{{team.team.abbrev_name}}' type='text'
+        				value='{{user_bid.quantity_remaining}}'/></td>
+        			<td><input style='width:50px;' name='bid_{{team.team.abbrev_name}}' type='text'
+        				value='{{user_bid.price}}'/></td>
+	        		<td><span
+	        			{% if user_bid.quantity_remaining and user_bid.price == security.get_bid %}
+	        				style='font-weight:bold;'
+	        			{% endif %}>
+	        		{{ security.get_bid }}</span></td>
+	        		<td><span
+	        			{% if user_ask.quantity_remaining and user_ask.price == security.get_ask %}
+	        				style='font-weight:bold;'
+	        			{% endif %}>
+	        		{{ security.get_ask }}</span></td>
+	        		<td><input style='width:50px;' name='ask_{{team.team.abbrev_name}}' type='text'
+	        			value='{{user_ask.price}}'/></td>
+	        		<td><input style='width:50px;' name='ask_size_{{team.team.abbrev_name}}' type='text'
+	        			value='{{user_ask.quantity_remaining}}'/></td>
+	        	</tr>
+	       	{% endfor %}
+	    </table>
+	    <button type='submit' class='btn btn-success'>Submit Changes</button>
+	</form>
+</div>
+
+{% endblock game_body %}
