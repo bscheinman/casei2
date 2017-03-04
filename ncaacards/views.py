@@ -587,7 +587,7 @@ def do_place_order(request, game_id):
         else:
             results['field_errors'] = form.errors
 
-    return HttpResponse(json.dumps(results), mimetype='text/json')
+    return HttpResponse(json.dumps(results))
 
 
 @login_required
@@ -615,7 +615,7 @@ def cancel_order(request, game_id):
             order.save()
             results['success'] = True
 
-    return HttpResponse(json.dumps(results), mimetype='text/json')
+    return HttpResponse(json.dumps(results))
 
 
 @login_required
@@ -651,7 +651,7 @@ def change_order(request, game_id):
         except Exception as ex:
             results['errors'].append(str(ex))
 
-    return HttpResponse(json.dumps(results), mimetype='text/json')
+    return HttpResponse(json.dumps(results))
 
 
 
@@ -800,4 +800,4 @@ def do_make_market(request, game_id):
             apply_market_maker_line(False, self_ask, ask_price, ask_size)
 
     results = { 'success' : len(errors) == 0, 'errors' : errors }
-    return HttpResponse(json.dumps(results), mimetype='text/json')
+    return HttpResponse(json.dumps(results))
