@@ -1,15 +1,16 @@
 from cix.forms import LoginForm, SignupForm
-from cix.logic import get_login_redirect, get_login_render_page, send_verification_email
+from cix.logic import get_login_render_page, send_verification_email
 from profiles.models import UserProfile
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 
 
 def render_with_request_context(request, page, context):
-    return render_to_response(page, RequestContext(request, context))
+    #return render(page, RequestContext(request, context))
+    return render(request, page, context)
 
 
 def home(request):
@@ -45,8 +46,8 @@ def do_login(request):
     redirect_target = request.POST.get('redirect_target', '')
     if error:
         return render_with_request_context(request, get_login_render_page(redirect_target), { 'login_error':error })
-    return HttpResponseRedirect(get_login_redirect(request.POST.get(redirect_target)))
-
+    #return HttpResponseRedirect(get_login_redirect(request.POST.get(redirect_target)))
+    return HttpResponseRedirect(request.POST.get(redirect_target, '/'))
 
 def signup(request):
     if request.user.is_authenticated():

@@ -29,9 +29,5 @@ def send_verification_email(email, verify_id):
     msg.send()
 
 
-def get_login_redirect(redirect_key):
-    return settings.LOGIN_REDIRECTS.get(redirect_key, settings.DEFAULT_LOGIN_REDIRECT)
-
-
 def get_login_render_page(redirect_key):
     return settings.LOGIN_RENDERS.get(redirect_key, settings.DEFAULT_LOGIN_RENDER)
