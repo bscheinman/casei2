@@ -57,10 +57,10 @@ class Security(models.Model):
         cursor = connection.cursor()
         query = """ SELECT SUM(quantity_remaining) AS total_qty
             FROM trading_order
-            WHERE is_active = 1 AND is_buy = %s AND quantity_remaining > 0 AND security_id = %s
+            WHERE is_active = true AND is_buy = %s AND quantity_remaining > 0 AND security_id = %s
             GROUP BY price
             ORDER BY price %s
-            LIMIT 1; """ % ('1' if is_buy else '0', self.id, 'DESC' if is_buy else 'ASC')
+            LIMIT 1; """ % ('true' if is_buy else 'false', self.id, 'DESC' if is_buy else 'ASC')
         cursor.execute(query)
         row = cursor.fetchone()
         return row[0] if row else 0
