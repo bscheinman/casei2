@@ -1,5 +1,5 @@
-from casei.ncaacards.models import NcaaGame, UserEntry
-from casei.trading.models import Execution
+from ncaacards.models import NcaaGame, UserEntry
+from trading.models import Execution
 import collections
 from django.core.management.base import NoArgsCommand
 import pygraphviz as gv

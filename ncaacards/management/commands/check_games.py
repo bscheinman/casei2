@@ -1,13 +1,13 @@
-from casei.ncaacards.models import LiveGame, TradeOffer
-from casei.trading.models import Order
-from django.core.management.base import NoArgsCommand
+from ncaacards.models import LiveGame, TradeOffer
+from trading.models import Order
+from django.core.management.base import BaseCommand
 from django.db.models import Q
 import datetime
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     
-    def handle_noargs(self, **options):
+    def handle(self, *args, **kwargs):
         now = datetime.datetime.now()
         started_games = LiveGame.objects.filter(game_time__lt=now, is_processed=False)
         for game in started_games:

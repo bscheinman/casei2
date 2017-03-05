@@ -118,8 +118,8 @@ class Security(models.Model):
 
 
 class OpenOrderManager(models.Manager):
-    def get_query_set(self):
-        return super(OpenOrderManager, self).get_query_set().filter(quantity_remaining__gt=0, is_active=True)
+    def get_queryset(self):
+        return super(OpenOrderManager, self).get_queryset().filter(quantity_remaining__gt=0, is_active=True)
 
 class Order(models.Model):
     order_id = UUIDField(auto=True, primary_key=True)
