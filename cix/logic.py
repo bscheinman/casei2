@@ -27,7 +27,3 @@ def send_verification_email(email, verify_id):
     msg = EmailMultiAlternatives(subject, '', from_email, [to_email])
     msg.attach_alternative(html_content, 'text/html')
     msg.send()
-
-
-def get_login_render_page(redirect_key):
-    return settings.LOGIN_RENDERS.get(redirect_key, settings.DEFAULT_LOGIN_RENDER)

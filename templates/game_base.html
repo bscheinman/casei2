@@ -104,7 +104,7 @@
             </div>
             <div class='modal-body'>
                 <form id='login_form' method='POST' action='/do_login/' class='well'>{% csrf_token %}
-                    <input type='hidden' name='redirect_target' value='ncaa_home'>
+                    <input type='hidden' name='redirect_target' value='/'>
                     <input type='text' name='username' placeholder='username'>
                     <input type='password' name='password' placeholder='password'>
                     <button id='login_form_submit' type='submit' class='btn btn-primary'>Log In</button>

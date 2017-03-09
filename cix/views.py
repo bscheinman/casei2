@@ -1,5 +1,5 @@
 from cix.forms import LoginForm, SignupForm
-from cix.logic import get_login_render_page, send_verification_email
+from cix.logic import send_verification_email
 from profiles.models import UserProfile
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import Group, User
@@ -43,11 +43,10 @@ def do_login(request):
     else:
         error = 'Please enter a valid username and password'
 
-    redirect_target = request.POST.get('redirect_target', '')
+    redirect_target = request.POST.get('redirect_target', '/')
     if error:
-        return render_with_request_context(request, get_login_render_page(redirect_target), { 'login_error':error })
-    #return HttpResponseRedirect(get_login_redirect(request.POST.get(redirect_target)))
-    return HttpResponseRedirect(request.POST.get(redirect_target, '/'))
+        return HttpResponseRedirect(redirect_target, { 'login_error': error })
+    return HttpResponseRedirect(redirect_target)
 
 def signup(request):
     if request.user.is_authenticated():
