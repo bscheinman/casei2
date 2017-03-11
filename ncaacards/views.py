@@ -725,12 +725,13 @@ def market_maker(request, game_id):
     rows = []
     game_teams = GameTeam.objects.filter(game=game, team__is_eliminated=False).order_by('team__abbrev_name').select_related('team')
     securities = Security.objects.filter(market__game=context['game'])
+    positions = { position.team_id: position.count for position in UserTeam.objects.filter(entry__id=self_entry.id) }
     security_map = {}
     for security in securities:
         security_map[security.name] = security
     for team in game_teams:
         security = security_map[team.team.abbrev_name]
-        position = UserTeam.objects.filter(entry__id=self_entry.id, team__id=team.id)[0].count
+        position = positions[team.id]
         user_bid = security.get_bid_order(self_entry)
         user_ask = security.get_ask_order(self_entry)
         rows.append((team, security, position, user_bid, user_ask))
