@@ -1,11 +1,12 @@
 from trading.models import Execution, Market, Order, Security
 from django.contrib import admin
 from django.contrib.auth.models import User
-from django.db import models, transaction
+from django.db import connection, models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import logging
 import string
+import uuid
 
 logger = logging.getLogger('ncaacards')
 
@@ -67,6 +68,7 @@ class UserEntry(models.Model):
     extra_points = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     join_time = models.DateTimeField(auto_now_add=True)
+    apid = models.UUIDField(default=uuid.uuid4, unique=True)
 
     class Meta:
         unique_together = ('game', 'entry_name')
@@ -80,6 +82,19 @@ class UserEntry(models.Model):
             points += team.team.score * team.count
         self.score = points
         self.save()
+
+    def get_positions(self):
+        cursor = connection.cursor()
+        query = """
+            SELECT t.abbrev_name, p.count
+                FROM ncaacards_userteam AS p
+                INNER JOIN ncaacards_gameteam AS gt
+                    USING (team_id)
+                INNER JOIN ncaacards_team AS t
+                    ON gt.team_id = t.id
+        """
+        cursor.execute(query)
+        return dict(map(tuple, cursor.fetchall()))
 
 
 class Team(models.Model):

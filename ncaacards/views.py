@@ -11,7 +11,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 import datetime
 import json
 import re
-
+import uuid
 
 def get_base_context(request, game_id, **kwargs):
     context = {}
@@ -802,3 +802,15 @@ def do_make_market(request, game_id):
 
     results = { 'success' : len(errors) == 0, 'errors' : errors }
     return HttpResponse(json.dumps(results))
+
+def entry_positions(request, entry_apid):
+    apid = uuid.UUID(entry_apid)
+    entries = UserEntry.objects.filter(apid=apid)
+
+    if entries:
+        entry = entries[0]
+        result = entry.get_positions()
+    else:
+        result = { 'error' : 'invalid entry id' }
+
+    return HttpResponse(json.dumps(result))
