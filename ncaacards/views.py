@@ -814,3 +814,27 @@ def entry_positions(request, entry_apid):
         result = { 'error' : 'invalid entry id' }
 
     return HttpResponse(json.dumps(result))
+
+def entry_executions(request, entry_apid):
+    apid = uuid.UUID(entry_apid)
+    entries = UserEntry.objects.filter(apid=apid)
+
+    if entries:
+        entry = entries[0]
+        query = (Q(buy_order__placer=entry.entry_name) | Q(sell_order__placer=entry.entry_name)) & Q(security__market__name=entry.game.name)
+        executions = Execution.objects.filter(query).order_by('time').select_related('buy_order').select_related('sell_order').select_related('security')
+        result = []
+        for execution in executions:
+            side = 'BUY' if execution.buy_order.placer == entry.entry_name else 'SELL'
+            result.append({
+                'time' : str(execution.time),
+                'team' : execution.security.name,
+                'side' : side,
+                'quantity' : execution.quantity,
+                'price' : float(execution.price),
+            })
+    else:
+        result = { 'error' : 'invalid entry id' }
+
+    #return HttpResponse(json.dumps(result))
+    return render_with_request_context(request, 'noop.html', { 'result' : result})
