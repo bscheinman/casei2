@@ -83,19 +83,6 @@ class UserEntry(models.Model):
         self.score = points
         self.save()
 
-    def get_positions(self):
-        cursor = connection.cursor()
-        query = """
-            SELECT t.abbrev_name, p.count
-                FROM (SELECT * FROM ncaacards_userteam WHERE entry_id = {0}) AS p
-                INNER JOIN ncaacards_gameteam AS gt
-                    ON p.team_id = gt.id
-                INNER JOIN ncaacards_team AS t
-                    ON gt.team_id = t.id
-        """.format(self.id)
-        cursor.execute(query)
-        return dict(map(tuple, cursor.fetchall()))
-
 
 class Team(models.Model):
     full_name = models.CharField(max_length=50)

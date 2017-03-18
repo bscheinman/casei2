@@ -809,7 +809,10 @@ def entry_positions(request, entry_apid):
 
     if entries:
         entry = entries[0]
-        result = entry.get_positions()
+        positions = entry.teams.select_related('team__team')
+        result = {}
+        for position in positions:
+            result[position.team.team.abbrev_name] = position.count
     else:
         result = { 'error' : 'invalid entry id' }
 
