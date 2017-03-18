@@ -68,7 +68,7 @@ class UserEntry(models.Model):
     extra_points = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     join_time = models.DateTimeField(auto_now_add=True)
-    apid = models.UUIDField(default=uuid.uuid4, unique=True)
+    apid = models.UUIDField(null=True, default=uuid.uuid4, unique=True)
 
     class Meta:
         unique_together = ('game', 'entry_name')
