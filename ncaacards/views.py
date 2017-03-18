@@ -836,5 +836,4 @@ def entry_executions(request, entry_apid):
     else:
         result = { 'error' : 'invalid entry id' }
 
-    #return HttpResponse(json.dumps(result))
-    return render_with_request_context(request, 'noop.html', { 'result' : result})
+    return HttpResponse(json.dumps(result))
