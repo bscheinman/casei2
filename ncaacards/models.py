@@ -89,7 +89,7 @@ class UserEntry(models.Model):
             SELECT t.abbrev_name, p.count
                 FROM (SELECT * FROM ncaacards_userteam WHERE entry_id = {0}) AS p
                 INNER JOIN ncaacards_gameteam AS gt
-                    USING (team_id)
+                    ON p.team_id = gt.id
                 INNER JOIN ncaacards_team AS t
                     ON gt.team_id = t.id
         """.format(self.id)
