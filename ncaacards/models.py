@@ -87,12 +87,12 @@ class UserEntry(models.Model):
         cursor = connection.cursor()
         query = """
             SELECT t.abbrev_name, p.count
-                FROM ncaacards_userteam AS p
+                FROM (SELECT * FROM ncaacards_userteam WHERE entry_id = {0}) AS p
                 INNER JOIN ncaacards_gameteam AS gt
                     USING (team_id)
                 INNER JOIN ncaacards_team AS t
                     ON gt.team_id = t.id
-        """
+        """.format(self.id)
         cursor.execute(query)
         return dict(map(tuple, cursor.fetchall()))
 
