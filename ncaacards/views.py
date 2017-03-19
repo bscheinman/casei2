@@ -804,23 +804,40 @@ def do_make_market(request, game_id):
     return HttpResponse(json.dumps(results))
 
 def entry_positions(request, entry_apid):
-    apid = uuid.UUID(entry_apid)
-    entries = UserEntry.objects.filter(apid=apid)
+    try:
+        apid = uuid.UUID(entry_apid)
+        entries = UserEntry.objects.filter(apid=apid)
+    except ValueError:
+        entries = None
 
-    if entries:
+    name_type = request.GET.get('name', 'abbrev')
+    if name_type == 'abbrev':
+        get_name = lambda p: p.team.team.abbrev_name
+    elif name_type == 'full':
+        get_name = lambda p: p.team.team.full_name
+    else:
+        get_name = None
+
+    if not get_name:
+        result = { 'error' : 'invalid name type' }
+    elif entries:
         entry = entries[0]
         positions = entry.teams.select_related('team__team')
         result = {}
         for position in positions:
-            result[position.team.team.abbrev_name] = position.count
+            result[get_name(position)] = position.count
+        result['points'] = float(entry.extra_points)
     else:
         result = { 'error' : 'invalid entry id' }
 
     return HttpResponse(json.dumps(result))
 
 def entry_executions(request, entry_apid):
-    apid = uuid.UUID(entry_apid)
-    entries = UserEntry.objects.filter(apid=apid)
+    try:
+        apid = uuid.UUID(entry_apid)
+        entries = UserEntry.objects.filter(apid=apid)
+    except ValueError:
+        entries = None
 
     if entries:
         entry = entries[0]
