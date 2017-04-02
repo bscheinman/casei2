@@ -1,16 +1,17 @@
 from ncaacards.models import NcaaGame, UserEntry
 from trading.models import Execution
 import collections
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 import pygraphviz as gv
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
 
-    args = '<game_name>'
+    def add_arguments(self, parser):
+        parser.add_argument('game_name')
 
     def handle(self, *args, **options):
         edges = collections.defaultdict(int)
-        game = NcaaGame.objects.get(name=args[0])
+        game = NcaaGame.objects.get(name=options['game_name'])
         entry_scores = dict([(entry.entry_name, entry.score) for entry in UserEntry.objects.filter(game=game)])
 
         for execution in Execution.objects.filter(security__market__game=game):
@@ -28,9 +29,6 @@ class Command(NoArgsCommand):
             edges[edge_key] += trade_coeff * trade_delta
 
         trade_graph = gv.AGraph(strict=True, directed=True)
-        for entry, score in entry_scores.iteritems():
-            #trade_graph.add_node(entry, label='%s: %s' % (entry, str(score)))
-            trade_graph.add_node(entry)
         for entries, weight in edges.iteritems():
             if weight > 0:
                 entries = (entries[1], entries[0])
