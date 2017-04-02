@@ -131,7 +131,9 @@ def team_list(request, game_id):
         return HttpResponseRedirect('/ncaa/')
     rows = []
     bid_total, ask_total, last_total, volume_total, points_total = Decimal('0.0'), Decimal('0.0'), Decimal('0.0'), 0, 0
-    game_teams = GameTeam.objects.filter(game=game, team__is_eliminated=False).order_by('team__abbrev_name').select_related('team')
+    game_teams = GameTeam.objects.filter(game=game).order_by('team__abbrev_name').select_related('team')
+    if not request.GET.get('all_teams', False):
+        game_teams = game_teams.filter(team__is_eliminated=False)
     if game.supports_stocks:
         securities = Security.objects.filter(market__game=context['game'])
         security_map = { }
