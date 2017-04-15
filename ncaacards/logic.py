@@ -16,8 +16,9 @@ def get_entry(game, user):
         return None
 
 
-def get_leaders(game):
-    return UserEntry.objects.filter(game=game).order_by('-score')
+def get_leaders(game, estimated=True):
+    sorter = '-estimated_score' if estimated else '-score'
+    return UserEntry.objects.filter(game=game).order_by(sorter)
 
 
 def apply_trade_side(components, points, entry, holdings, addOrRemove):

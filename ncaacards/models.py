@@ -69,6 +69,7 @@ class UserEntry(models.Model):
     score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     join_time = models.DateTimeField(auto_now_add=True)
     apid = models.UUIDField(null=True, default=uuid.uuid4, unique=True)
+    estimated_score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
 
     class Meta:
         unique_together = ('game', 'entry_name')
@@ -78,9 +79,15 @@ class UserEntry(models.Model):
 
     def update_score(self):
         points = self.extra_points
-        for team in self.teams.all():
+        estimated_points = self.extra_points
+
+        for team in self.teams.all().select_related('team'):
             points += team.team.score * team.count
+            estimated_points += team.team.estimated_score * team.count
+
         self.score = points
+        self.estimated_score = estimated_points
+
         self.save()
 
 
@@ -97,11 +104,21 @@ class Team(models.Model):
         return self.full_name
 
 
+@admin.register(Team)
+class TeamModelAdmin(admin.ModelAdmin):
+    list_display = ('full_name',)
+    search_fields = ['full_name']
+
+    def get_ordering(self, request):
+        return ['game_type', 'full_name']
+
+
 class GameTeam(models.Model):
     game = models.ForeignKey(NcaaGame)
     team = models.ForeignKey(Team)
     score = models.IntegerField(default=0)
     volume = models.IntegerField(default=0)
+    estimated_score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
 
     def __str__(self):
         return '%s (%s)' % (self.team.full_name, self.game.name)
@@ -117,7 +134,27 @@ class GameTeam(models.Model):
             points += count * multiplier
         self.score = points 
         self.save()
+
+    def update_estimated_score(self, security):
+        old_score = self.estimated_score
+
+        if self.team.is_eliminated:
+            self.estimated_score = self.score
+        else:
+            mid = security.get_mid()
+            if mid is None:
+                self.estimated_score = security.get_last()
+            else:
+                self.estimated_score = mid
+
+        if self.estimated_score == old_score:
+            return
         
+        self.save()
+
+        # XXX: We really need better incremental updates
+        for user_team in UserTeam.objects.filter(entry__game=self.game, team=self).exclude(count=0):
+            user_team.entry.update_score()
 
 
 class TeamScoreCount(models.Model):
@@ -212,7 +249,6 @@ class LiveGame(models.Model):
 
 
 admin.site.register(NcaaGame)
-admin.site.register(Team)
 admin.site.register(UserTeam)
 admin.site.register(ScoreType)
 admin.site.register(TradingBlock)
@@ -345,6 +381,10 @@ def on_new_team(sender, instance, created, **kwargs):
                 if game.supports_stocks:
                     Security.objects.create(
                         market=Market.objects.filter(game=game)[0], team=game_team, name=instance.abbrev_name)
+    else:
+        # eliminated state could have changes, which affects estimated scores
+        for game_team in GameTeam.objects.filter(team=self).select_related('team'):
+            game_team.update_estimated_score()
 
 
 @receiver(post_save, sender=ScoreType, weak=False)
@@ -390,3 +430,10 @@ def record_execution(sender, instance, created, **kwargs):
 
         except Exception as e:
             logger.error('Error processing execution %s: %s' % (instance.execution_id, str(e)))
+
+@receiver(post_save, sender=Order, weak=False)
+def record_order(sender, instance, created, **kwargs):
+    game = NcaaGame.objects.get(name=instance.security.market.name)
+    team = Team.objects.get(abbrev_name=instance.security.name, game_type=game.game_type)
+    game_team = GameTeam.objects.get(game=game, team=team)
+    game_team.update_estimated_score(instance.security)

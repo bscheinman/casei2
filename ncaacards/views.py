@@ -79,7 +79,8 @@ def entry_view(request, game_id, entry_id):
     user_teams = UserTeam.objects.filter(teams_query).order_by('team__team__abbrev_name')
     for user_team in user_teams:
         team_score = user_team.team.score * user_team.count
-        teams.append((user_team.team, user_team.count, team_score))
+        estimated_team_score = user_team.team.estimated_score * user_team.count
+        teams.append((user_team.team, user_team.count, team_score, estimated_team_score))
     
     card_offers, stock_orders, card_executions, stock_executions = None, None, None, None
     if game.supports_cards:

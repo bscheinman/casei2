@@ -93,6 +93,25 @@ class Security(models.Model):
             cache.set(cache_key, ask, None)
         return ask
 
+    def get_mid(self):
+        cache_key = 'mid_%s' % self.id
+        mid = cache.get(cache_key)
+        if mid is not None:
+            return mid
+
+        bid = self.get_bid_order()
+        if not bid.quantity_remaining:
+            return None
+
+        ask = self.get_ask_order()
+        if not ask.quantity_remaining:
+            return None
+
+        mid = (bid.price + ask.price) / 2
+        cache.set(cache_key, mid, None)
+
+        return mid
+
     def get_last(self):
         cache_key = 'last_%s' % self.id
         last = cache.get(cache_key)
@@ -212,7 +231,7 @@ def on_new_order(sender, instance, created, **kwargs):
     # right now is very low
     sec_id = instance.security.id
     entry_id = instance.entry.id
-    for tag in ('bid', 'ask', 'bid_size', 'ask_size'):
+    for tag in ('bid', 'ask', 'bid_size', 'ask_size', 'mid'):
     	cache_key = '%s_%s' % (tag, sec_id)
     	cache.delete(cache_key)
     	cache.delete(cache_key + '|entry=%s' % entry_id)

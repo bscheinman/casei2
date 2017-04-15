@@ -48,7 +48,8 @@
                 <td>{{ count }}</td>
                 <td>{{ row_score }}</td></tr>
             {% endfor %}
-            <tr><td>Total</td><td></td><td>{{ game_team.score }}</td></tr>
+            <tr><td colspan='2'>Total</td><td>{{ game_team.score }}</td></tr>
+            <tr><td colspan='2'>Estimated Score</td><td>{{ game_team.estimated_score }}</td></tr>
         </table><br/>
     </div>
     <div id='top_owners' class='well span3'>
