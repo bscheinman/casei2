@@ -40,8 +40,8 @@ Score: {{ entry.score }}<br/>
     <h3>Holdings</h3>
     <table class='table table-bordered table-striped table-condensed sortable'>
         <tr>
-        <td>Shares</td><td>Team</td><td>Points/Share</td><td>Estimated Points/Share</td><td>Total Points</td><td>Estimated Points</td></tr>
-        {% for team, shares, team_points, estimated_points in teams %}
+            <td>Shares</td><td>Team</td><td>Points/Share</td><td>Estimated Points/Share</td><td>Total Points</td><td>Estimated Points</td><td>Net Cost</td><td>Profit</td></tr>
+        {% for team, shares, team_points, estimated_points, net_cost, profit in teams %}
             <tr{% if team.team.is_eliminated %} class='eliminated-row'{% endif %}>
             <td>{{ shares }}</td>
             <td>
@@ -52,11 +52,13 @@ Score: {{ entry.score }}<br/>
             <td>{{ team.estimated_score }}</td>
             <td>{{ team_points }}</td>
             <td>{{ estimated_points }}</td>
+            <td>{{ net_cost }}</td>
+            <td>{{ profit }}</td>
             </tr>
         {% endfor %}
         <tfoot>
-            <tr><td colspan='4'>Tradable Points</td><td colspan='2'>{{ entry.extra_points }}</td></tr>
-            <tr><td colspan='4'><b>Total</b></td><td>{{ entry.score }}</td><td>{{ entry.estimated_score }}</td></tr>
+            <tr><td colspan='4'>Tradable Points</td><td colspan='4'>{{ entry.extra_points }}</td></tr>
+            <tr><td colspan='4'><b>Total</b></td><td>{{ entry.score }}</td><td colspan='3'>{{ entry.estimated_score }}</td></tr>
         </tfoot>
     </table>
     <input type='checkbox' checked='checked' onclick='ToggleEliminatedRows(this.checked)'>Show Eliminated Teams

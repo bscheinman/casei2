@@ -1,4 +1,5 @@
 from trading.models import Execution, Market, Order, Security
+from decimal import Decimal
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.db import connection, models, transaction
@@ -170,10 +171,24 @@ class UserTeam(models.Model):
     entry = models.ForeignKey(UserEntry, related_name='teams')
     team = models.ForeignKey(GameTeam)
     count = models.IntegerField()
+    net_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
 
     def __str__(self):
         return '%s: %s' % (self.entry.entry_name, self.team.team.abbrev_name)
 
+    def recompute_net_cost(self):
+        net_cost = Decimal(0)
+        entry_name = self.entry.entry_name
+        for execution in Execution.objects.filter(security__market__name=self.entry.game.name,
+                security__name=self.team.team.abbrev_name):
+            # XXX: use Q to filter by user in db query
+            if execution.buy_order.entry.entry_name == entry_name:
+                net_cost += execution.price * execution.quantity
+            elif execution.sell_order.entry.entry_name == entry_name:
+                net_cost -= execution.price * execution.quantity
+
+        self.net_cost = net_cost
+        self.save()
 
 class TradingBlock(models.Model):
     entry = models.OneToOneField(UserEntry, related_name='trading_block')
@@ -415,12 +430,20 @@ def record_execution(sender, instance, created, **kwargs):
                 buyer.extra_points -= transaction_points
                 buyer.update_score()
 
+                buy_team = UserTeam.objects.get(entry=buyer, team=game_team)
+                buy_team.net_cost += transaction_points
+                buy_team.save()
+
                 seller = UserEntry.objects.get(game=game, entry_name=instance.sell_order.placer)
                 seller_count = UserTeam.objects.get(team=game_team, entry=seller)
                 seller_count.count -= instance.quantity
                 seller_count.save()
                 seller.extra_points += transaction_points
                 seller.update_score()
+
+                sell_team = UserTeam.objects.get(entry=seller, team=game_team)
+                sell_team.net_cost -= transaction_points
+                sell_team.save()
 
                 check_limits(buyer, [game_team])
                 check_limits(seller, [game_team])

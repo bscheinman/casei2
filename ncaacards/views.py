@@ -80,7 +80,7 @@ def entry_view(request, game_id, entry_id):
     for user_team in user_teams:
         team_score = user_team.team.score * user_team.count
         estimated_team_score = user_team.team.estimated_score * user_team.count
-        teams.append((user_team.team, user_team.count, team_score, estimated_team_score))
+        teams.append((user_team.team, user_team.count, team_score, estimated_team_score, user_team.net_cost, estimated_team_score - user_team.net_cost))
     
     card_offers, stock_orders, card_executions, stock_executions = None, None, None, None
     if game.supports_cards:
