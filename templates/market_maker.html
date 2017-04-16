@@ -28,7 +28,7 @@
 <div class='span8'>
 	<form id='mm_form' method='POST' action='/ncaa/game/{{game.id}}/make_market/'>
 		{% csrf_token %}
-	    <table class='table table-bordered table-striped table-condensed sortable'>
+	    <table class='table table-bordered table-condensed sortable'>
 	        <thead><tr>
 	        	<th>Team</th>
 	        	<th>Last</th>
@@ -43,7 +43,7 @@
 	            <th width='25'>Ask Size</th>
 	        </tr></thead>
 	        {% for team, security, position, user_bid, user_ask in rows %}
-	        	<tr>
+                <tr bgcolor='{{ team.team|upcoming_color }}'>
 	        		<td>{% team_link team.team.abbrev_name game 'stock_tab' %}</td>
 	        		<td>{{ security.get_last }}</td>
 	        		<td>{{ team.volume }}</td>

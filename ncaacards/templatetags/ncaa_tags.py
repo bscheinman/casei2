@@ -160,7 +160,5 @@ def upcoming_color(team):
         else:
             color_scale = float(time_until.total_seconds()) / UPCOMING_THRESHOLD.total_seconds()
 
-    print team.abbrev_name, (next_game.game_time if next_game else ''), color_scale
-
     gb_value = min(256 * (BASE_FACTOR + color_scale * (1.0 - BASE_FACTOR)), 255)
     return '#FF{0}{0}'.format(hex(int(gb_value))[2:].zfill(2).upper())
