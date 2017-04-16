@@ -25,6 +25,10 @@
         function ToggleEliminatedRows(show) {
             $('.eliminated-row').css('display', show ? '' : 'none');
         }
+
+        function ToggleTeamProfits(show) {
+            $('.team-profit').css('display', show ? '' : 'none');
+        }
     </script>
     {% include 'accept_form_confirmation.html' %}
     {% include 'change_form_script.html' %}
@@ -40,7 +44,7 @@ Score: {{ entry.score }}<br/>
     <h3>Holdings</h3>
     <table class='table table-bordered table-striped table-condensed sortable'>
         <tr>
-            <td>Shares</td><td>Team</td><td>Points/Share</td><td>Estimated Points/Share</td><td>Total Points</td><td>Estimated Points</td><td>Net Cost</td><td>Profit</td></tr>
+            <td>Shares</td><td>Team</td><td>Points/Share</td><td>Estimated Points/Share</td><td>Total Points</td><td>Estimated Points</td><td class='team-profit'>Net Cost</td><td class='team-profit'>Profit</td></tr>
         {% for team, shares, team_points, estimated_points, net_cost, profit in teams %}
             <tr{% if team.team.is_eliminated %} class='eliminated-row'{% endif %}>
             <td>{{ shares }}</td>
@@ -52,8 +56,8 @@ Score: {{ entry.score }}<br/>
             <td>{{ team.estimated_score }}</td>
             <td>{{ team_points }}</td>
             <td>{{ estimated_points }}</td>
-            <td>{{ net_cost }}</td>
-            <td>{{ profit }}</td>
+            <td class='team-profit'>{{ net_cost }}</td>
+            <td class='team-profit'>{{ profit }}</td>
             </tr>
         {% endfor %}
         <tfoot>
@@ -61,6 +65,7 @@ Score: {{ entry.score }}<br/>
             <tr><td colspan='4'><b>Total</b></td><td>{{ entry.score }}</td><td colspan='3'>{{ entry.estimated_score }}</td></tr>
         </tfoot>
     </table>
+    <input type='checkbox' checked='checked' onclick='ToggleTeamProfits(this.checked)'>Show Team Profit Information<br/>
     <input type='checkbox' checked='checked' onclick='ToggleEliminatedRows(this.checked)'>Show Eliminated Teams
 </div>
 {% endblock main_tab %}
