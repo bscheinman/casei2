@@ -38,7 +38,14 @@
 
 {% block main_tab %}
     <div class='row' style='margin-left:30px; margin-bottom:10px;'>
-        <span style='font-weight:bold; font-size:16px;'>Volume: {{ game_team.volume }}</span>
+        <span style='font-weight:bold; font-size:16px;'>Volume: {{ game_team.volume }}</span><br/>
+        <span style='font-weight:bold; font-size:16px;'>Next Game:
+            {% if team.get_next_game %}
+                {% include 'team_game.html' with game=team.get_next_game team=team %}
+            {% else %}
+                None
+            {% endif %}
+        </span>
     </div>
     <div id='score_counts' class='span5'>
         <table class='table table-bordered table-striped table-condensed'>

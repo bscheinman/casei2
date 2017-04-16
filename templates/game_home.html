@@ -25,6 +25,14 @@
         </div><br/>
     </div>
 
+    <div>
+        <span style='font-weight:bold; font-size:16px;'>Upcoming games:</span><br/>
+        {% for live_game in game.game_type.get_upcoming_games %}
+            {% include 'live_game.html' with live_game=live_game %}<br/>
+        {% endfor %}
+    </div>
+
+
     {% if not self_entry %}
         <div class='well span4'>
             {% if error %}

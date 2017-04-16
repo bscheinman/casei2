@@ -1,8 +1,10 @@
 from array import array
-from ncaacards.models import GameTeam, UserEntry
+from ncaacards.models import GameTeam, Team, UserEntry
 from django import template
 from django.db import connection
+from django.utils import timezone
 register = template.Library()
+import datetime
 import random
 
 @register.filter
@@ -120,16 +122,7 @@ def trade_form(game, team=None):
     if team:
         all_team_ids = []
     else:
-        cursor = connection.cursor()
-        query = """ select t.abbrev_name from
-            ncaacards_gameteam gt inner join
-            ncaacards_team t
-            on gt.team_id = t.id
-            where gt.game_id = %s
-            order by t.abbrev_name asc """
-        cursor.execute(query, [game.id])
-        all_team_ids = [x[0] for x in cursor.fetchall()]
-        #all_team_ids = [t.team.abbrev_name for t in GameTeam.objects.filter(game=game).order_by('team__abbrev_name')]
+        all_team_ids = [t.abbrev_name for t in Team.objects.filter(game_type=game.game_type, is_eliminated=False).order_by('abbrev_name')]
     return { 'game':game, 'team':team, 'all_team_ids':all_team_ids }
 
 
@@ -150,3 +143,24 @@ def execution_table(executions, game, self_entry):
 @register.inclusion_tag('order_format.html')
 def order_format(order, self_entry, value):
     return { 'is_self_order': (order.entry == self_entry), 'value':value }
+
+UPCOMING_THRESHOLD = datetime.timedelta(days=2)
+BASE_FACTOR = 0.3
+@register.filter
+def upcoming_color(team):
+    next_game = team.get_next_game()
+    if next_game is None:
+        color_scale = 1.0
+    else:
+        time_until = next_game.game_time - timezone.now()
+        if time_until >= UPCOMING_THRESHOLD:
+            color_scale = 1.0
+        elif time_until <= datetime.timedelta(0):
+            color_scale = 0.0
+        else:
+            color_scale = float(time_until.total_seconds()) / UPCOMING_THRESHOLD.total_seconds()
+
+    print team.abbrev_name, (next_game.game_time if next_game else ''), color_scale
+
+    gb_value = min(256 * (BASE_FACTOR + color_scale * (1.0 - BASE_FACTOR)), 255)
+    return '#FF{0}{0}'.format(hex(int(gb_value))[2:].zfill(2).upper())

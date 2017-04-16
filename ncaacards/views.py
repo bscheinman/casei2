@@ -454,6 +454,8 @@ def join_game(request):
 
     if not entry_name:
         error = 'You must provide an entry name'
+    elif len(entry_name) > 50:
+        error = 'Entry names cannot be longer than 50 characters'
     elif entry_forbidden_regex.search(entry_name):
         error = 'Entry names can only contain letters, numbers, spaces, and underscores'
     else:

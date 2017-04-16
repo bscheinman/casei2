@@ -1,0 +1,7 @@
+{% load ncaa_tags %}
+
+{% if game.home_team == team %}
+    {{ game.game_time }} vs. {% team_link game.away_team.abbrev_name team.game %}
+{% else %}
+    {{ game.game_time }} @ {% team_link game.home_team.abbrev_name team.game %}
+{% endif %}

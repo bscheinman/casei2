@@ -1,10 +1,13 @@
 from trading.models import Execution, Market, Order, Security
-from decimal import Decimal
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db import connection, models, transaction
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from datetime import datetime
+from decimal import Decimal
 import logging
 import string
 import uuid
@@ -17,6 +20,12 @@ class GameType(models.Model):
     def __str__(self):
         return self.name
 
+    def get_upcoming_games(self, n=3):
+        games = LiveGame.objects.filter(home_team__game_type=self,
+                game_time__gt=datetime.now()).order_by('game_time')
+        if not games:
+            return []
+        return games[:n]
 
 class NcaaGame(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -65,7 +74,7 @@ class ScoringSetting(models.Model):
 class UserEntry(models.Model):
     user = models.ForeignKey(User, related_name='entries')
     game = models.ForeignKey(NcaaGame, related_name='entries')
-    entry_name = models.CharField(max_length=30)
+    entry_name = models.CharField(max_length=50)
     extra_points = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     join_time = models.DateTimeField(auto_now_add=True)
@@ -104,6 +113,17 @@ class Team(models.Model):
     def __str__(self):
         return self.full_name
 
+    def get_next_game(self):
+        return cache.get('next_game_{0}'.format(self.id))
+
+    def invalidate_next_game(self):
+        cache_key = 'next_game_{0}'.format(self.id)
+        query = (Q(home_team=self) | Q(away_team=self)) & Q(game_time__gt=datetime.now())
+        next_games = LiveGame.objects.filter(query).order_by('game_time')
+        if not next_games:
+            cache.delete(cache_key)
+        else:
+            cache.set(cache_key, next_games[0], None)
 
 @admin.register(Team)
 class TeamModelAdmin(admin.ModelAdmin):
@@ -460,3 +480,8 @@ def record_order(sender, instance, created, **kwargs):
     team = Team.objects.get(abbrev_name=instance.security.name, game_type=game.game_type)
     game_team = GameTeam.objects.get(game=game, team=team)
     game_team.update_estimated_score(instance.security)
+
+@receiver(post_save, sender=LiveGame, weak=False)
+def live_game_update(sender, instance, created, **kwargs):
+    instance.home_team.invalidate_next_game()
+    instance.away_team.invalidate_next_game()
