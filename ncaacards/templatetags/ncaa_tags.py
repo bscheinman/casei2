@@ -144,8 +144,8 @@ def execution_table(executions, game, self_entry):
 def order_format(order, self_entry, value):
     return { 'is_self_order': (order.entry == self_entry), 'value':value }
 
-UPCOMING_THRESHOLD = datetime.timedelta(days=2)
-BASE_FACTOR = 0.3
+UPCOMING_THRESHOLD = datetime.timedelta(days=1)
+BASE_FACTOR = 0.25
 @register.filter
 def upcoming_color(team):
     next_game = team.get_next_game()
@@ -159,6 +159,7 @@ def upcoming_color(team):
             color_scale = 0.0
         else:
             color_scale = float(time_until.total_seconds()) / UPCOMING_THRESHOLD.total_seconds()
+            color_scale = 1.0 - (1.0 - color_scale) ** 2.5
 
     gb_value = min(256 * (BASE_FACTOR + color_scale * (1.0 - BASE_FACTOR)), 255)
     return '#FF{0}{0}'.format(hex(int(gb_value))[2:].zfill(2).upper())

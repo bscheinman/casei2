@@ -156,8 +156,11 @@ class GameTeam(models.Model):
         self.score = points 
         self.save()
 
-    def update_estimated_score(self, security):
+    def update_estimated_score(self, security=None):
         old_score = self.estimated_score
+
+        if security is None:
+            security = Security.objects.get(team=self)
 
         if self.team.is_eliminated:
             self.estimated_score = self.score
@@ -418,7 +421,7 @@ def on_new_team(sender, instance, created, **kwargs):
                         market=Market.objects.filter(game=game)[0], team=game_team, name=instance.abbrev_name)
     else:
         # eliminated state could have changes, which affects estimated scores
-        for game_team in GameTeam.objects.filter(team=self).select_related('team'):
+        for game_team in GameTeam.objects.filter(team=instance):
             game_team.update_estimated_score()
 
 
