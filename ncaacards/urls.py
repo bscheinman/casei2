@@ -8,6 +8,7 @@ from ncaacards.feeds import RecentCardTradesFeed, RecentStockTradesFeed
 #admin.autodiscover()
 
 urlpatterns = [
+    url(r'^api/', include('ncaacards.api.urls')),
     url(r'^$', views.home),
     url(r'^game/([0-9]+)/$', views.game_home),
     url(r'^game/([0-9]+)/rss/cards/$', RecentCardTradesFeed()),

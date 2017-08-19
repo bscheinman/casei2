@@ -28,6 +28,8 @@ DEBUG = True
 ALLOWED_HOSTS = ['caseinsensitive.org']
 
 
+APPEND_SLASH=False
+
 # Application definition
 
 INSTALLED_APPS = [
