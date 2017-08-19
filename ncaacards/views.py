@@ -6,6 +6,7 @@ from cix.views import render_with_request_context
 from decimal import Decimal
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 import datetime
@@ -445,6 +446,7 @@ def join_game(request):
     game_id = request.POST.get('game_id', '')
     entry_name = request.POST.get('entry_name', '')
     password = request.POST.get('password', '')
+    otp = None
 
     game = get_game(game_id)
     if not game or request.method != 'POST':
@@ -467,7 +469,10 @@ def join_game(request):
             error = 'There is already an entry with the name %s in this game' % entry_name
 
     if game.password and game.password != password:
-        error = 'Incorrect password'
+        try:
+            otp = GameOtp.objects.get(game=game, pw=password, active=True)
+        except GameOtp.DoesNotExist:
+            error = 'Incorrect password'
 
     self_entry = get_entry(game, request.user)
     if self_entry:
@@ -476,8 +481,15 @@ def join_game(request):
     if error:
         context = get_base_context(request, game_id, error=error, leaders=get_leaders(game))
         return render_with_request_context(request, 'game_home.html', context)
-    entry = UserEntry.objects.create(user=request.user, game=game, entry_name=entry_name)
-    entry.update_score()
+
+    with transaction.atomic():
+        entry = UserEntry.objects.create(user=request.user, game=game, entry_name=entry_name)
+        entry.update_score()
+
+        if otp is not None:
+            otp.active = False
+            otp.entry = entry
+            otp.save()
 
     return HttpResponseRedirect('/ncaa/game/%s/entry/%s/' % (game_id, entry.id))
 

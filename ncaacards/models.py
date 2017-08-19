@@ -100,6 +100,18 @@ class UserEntry(models.Model):
 
         self.save()
 
+def generate_otp():
+    return str(uuid.uuid4())
+
+class GameOtp(models.Model):
+    game = models.ForeignKey(NcaaGame, related_name='game')
+    pw = models.CharField(default=generate_otp, max_length=64, unique=True)
+    active = models.BooleanField(default=True)
+    entry = models.ForeignKey(UserEntry, null=True, blank=True, default=None)
+
+    def __str__(self):
+        return self.pw
+
 
 class Team(models.Model):
     full_name = models.CharField(max_length=50)
@@ -291,6 +303,7 @@ admin.site.register(UserTeam)
 admin.site.register(ScoreType)
 admin.site.register(TradingBlock)
 admin.site.register(UserEntry)
+admin.site.register(GameOtp)
 admin.site.register(TeamScoreCount)
 admin.site.register(GameTeam)
 admin.site.register(ScoringSetting)
