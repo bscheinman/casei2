@@ -72,8 +72,8 @@ def offer_side(offer_side):
 
 
 @register.inclusion_tag('team_link.html')
-def team_link(team_name, game_id=-1, start_tab=''):
-    return { 'team_name':team_name, 'game_id':game_id, 'start_tab':start_tab }
+def team_link(team_name, game=None, start_tab=''):
+    return { 'team_name':team_name, 'game':game, 'start_tab':start_tab }
 
 
 @register.inclusion_tag('entry_link.html')
@@ -82,10 +82,10 @@ def entry_link(entry):
 
 
 @register.inclusion_tag('entry_link.html')
-def entry_name_link(entry_name, game_id):
+def entry_name_link(entry_name, game):
     entry = None
     try:
-        entry = UserEntry.objects.get(game_id=game_id, entry_name=entry_name)
+        entry = UserEntry.objects.get(game=game, entry_name=entry_name)
     except UserEntry.DoesNotExist:
         pass
     return { 'entry':entry }
