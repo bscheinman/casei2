@@ -32,8 +32,6 @@ urlpatterns = [
     url(r'^game/([0-9]+)/offer/([0-9]+)/$', views.offer_view),
     url(r'^game/([0-9]+)/offer/([0-9]+)/accept/$', views.accept_offer),
     url(r'^game/([0-9]+)/offer/([0-9]+)/cancel/$', views.cancel_offer),
-    url(r'^entry/([a-zA-Z0-9]+)/positions/$', views.entry_positions),
-    url(r'^entry/([a-zA-Z0-9]+)/executions/$', views.entry_executions),
     url(r'^create_game/$', views.create_game),
     url(r'^game_list/$', views.game_list),
     url(r'^do_create_game/$', views.do_create_game),

@@ -732,106 +732,30 @@ def do_make_market(request, game_id):
     for security in securities:
         security_map[security.name] = security
 
-    for team in game_teams:
-        do_edit = request.POST.get('apply_team_%s' % team.team.abbrev_name, False)
-        if not do_edit:
-            continue
+    try:
+        with transaction.atomic():
+            for team in game_teams:
+                do_edit = request.POST.get('apply_team_%s' % team.team.abbrev_name, False)
+                if not do_edit:
+                    continue
 
-        security = security_map[team.team.abbrev_name]
-        self_bid = security.get_bid_order(self_entry)
-        self_ask = security.get_ask_order(self_entry)
+                print 'making market for ' + team.team.abbrev_name
 
-        def extract_request_value(key_prefix, cast_type):
-            value = request.POST.get('%s_%s' % (key_prefix, team.team.abbrev_name), None)
-            if value is None:
-                raise Exception('missing required field %s' % key_prefix)
-            try:
-                return cast_type(value)
-            except ValueError as e:
-                raise Exception('invalid entry %s for field %s' % (value, key_prefix))
+                security = security_map[team.team.abbrev_name]
+                result = api.do_make_market(request, self_entry, security, team.team.abbrev_name)
 
-        def apply_market_maker_line(is_buy, existing_order, price, quantity):
-            if existing_order and existing_order.is_active:
-                if quantity:
-                    existing_order.price = price
-                    existing_order.quantity_remaining = quantity
-                    existing_order.last_modified = datetime.datetime.now()
-                else:
-                    existing_order.is_active = False
-                existing_order.save()
-            else:
-                if quantity:
-                    order = Order.orders.create(entry=self_entry, placer=self_entry.entry_name, security=security,
-                        price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=True)
+                print result
 
-        try:
-            bid_price = extract_request_value('bid', Decimal)
-            bid_size = extract_request_value('bid_size', int)
-            ask_price = extract_request_value('ask', Decimal)
-            ask_size = extract_request_value('ask_size', int)
+                if not result['success']:
+                    errors += ['{0}: {1}'.format(team.team.abbrev_name, e) for e in result['errors']]
 
-            if bid_size < 0 or ask_size < 0:
-                raise Exception('order sizes cannot be negative')
-        except Exception as e:
-            errors.append('error for security %s: %s' % (team.team.abbrev_name, str(e)))
-        else:
-            apply_market_maker_line(True, self_bid, bid_price, bid_size)
-            apply_market_maker_line(False, self_ask, ask_price, ask_size)
+            if errors:
+                print errors
+                raise Exception()
+
+    except Exception as e:
+        pass
 
     results = { 'success' : len(errors) == 0, 'errors' : errors }
+
     return HttpResponse(json.dumps(results))
-
-def entry_positions(request, entry_apid):
-    try:
-        apid = uuid.UUID(entry_apid)
-        entries = UserEntry.objects.filter(apid=apid)
-    except ValueError:
-        entries = None
-
-    name_type = request.GET.get('name', 'abbrev')
-    if name_type == 'abbrev':
-        get_name = lambda p: p.team.team.abbrev_name
-    elif name_type == 'full':
-        get_name = lambda p: p.team.team.full_name
-    else:
-        get_name = None
-
-    if not get_name:
-        result = { 'error' : 'invalid name type' }
-    elif entries:
-        entry = entries[0]
-        positions = entry.teams.select_related('team__team')
-        result = {}
-        for position in positions:
-            result[get_name(position)] = position.count
-        result['points'] = float(entry.extra_points)
-    else:
-        result = { 'error' : 'invalid entry id' }
-
-    return HttpResponse(json.dumps(result))
-
-def entry_executions(request, entry_apid):
-    try:
-        apid = uuid.UUID(entry_apid)
-        entries = UserEntry.objects.filter(apid=apid)
-    except ValueError:
-        entries = None
-
-    if entries:
-        entry = entries[0]
-        query = (Q(buy_order__placer=entry.entry_name) | Q(sell_order__placer=entry.entry_name)) & Q(security__market__name=entry.game.name)
-        executions = Execution.objects.filter(query).order_by('time').select_related('buy_order').select_related('sell_order').select_related('security')
-        result = []
-        for execution in executions:
-            side = 'BUY' if execution.buy_order.placer == entry.entry_name else 'SELL'
-            result.append({
-                'time' : str(execution.time),
-                'team' : execution.security.name,
-                'side' : side,
-                'quantity' : execution.quantity,
-                'price' : float(execution.price),
-            })
-    else:
-        result = { 'error' : 'invalid entry id' }
-
-    return HttpResponse(json.dumps(result))

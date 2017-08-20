@@ -4,6 +4,7 @@ from ncaacards.forms import TradeForm
 from ncaacards.logic import get_team_from_identifier
 from ncaacards.models import *
 from trading.models import Execution, Order
+import datetime
 import json
 
 def set_response_result(resp, result):
@@ -16,9 +17,10 @@ def set_response_error(resp, err):
 def create_base_response():
     return { 'success': True, 'errors': [] }
 
-def create_success_response(result):
+def create_success_response(result=None):
     resp = create_base_response()
-    set_response_result(resp, result)
+    if result is not None:
+        set_response_result(resp, result)
     return resp
 
 def create_error_response(err):
@@ -43,11 +45,6 @@ def needs_entry(fn):
         return HttpResponse(json.dumps(resp))
 
     return wrapper
-
-@csrf_exempt
-@needs_entry
-def make_market(request, entry):
-    return { 'entry_name': entry.entry_name }
 
 @csrf_exempt
 @needs_entry
@@ -117,7 +114,7 @@ def cancel_order(request, entry):
     order.is_active = False
     order.save()
 
-    return create_base_response()
+    return create_success_response()
 
 def do_place_order(params, self_entry):
     response = create_base_response()
@@ -172,3 +169,69 @@ def do_place_order(params, self_entry):
 @needs_entry
 def place_order(request, entry):
     return do_place_order(request.POST, entry)
+
+def do_make_market(request, entry, security, key_suffix=None):
+    self_bid = security.get_bid_order(entry)
+    self_ask = security.get_ask_order(entry)
+
+    def extract_request_value(key_prefix, cast_type):
+        key = key_prefix
+        if key_suffix is not None:
+            key = '{0}_{1}'.format(key_prefix, key_suffix)
+        value = request.POST.get(key, None)
+        if value is None:
+            raise Exception('missing required field %s' % key_prefix)
+        try:
+            return cast_type(value)
+        except ValueError as e:
+            raise Exception('invalid entry %s for field %s' % (value, key_prefix))
+
+    def apply_market_maker_line(is_buy, existing_order, price, quantity):
+        if existing_order and existing_order.is_active:
+            if quantity:
+                existing_order.price = price
+                existing_order.quantity_remaining = quantity
+                existing_order.last_modified = datetime.datetime.now()
+            else:
+                existing_order.is_active = False
+            existing_order.save()
+        else:
+            if quantity:
+                order = Order.orders.create(entry=entry, placer=entry.entry_name, security=security,
+                    price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=True)
+
+    try:
+        bid_price = extract_request_value('bid', Decimal)
+        bid_size = extract_request_value('bid_size', int)
+        ask_price = extract_request_value('ask', Decimal)
+        ask_size = extract_request_value('ask_size', int)
+    except Exception as e:
+        return create_error_response(str(e))
+
+    if bid_size < 0 or ask_size < 0:
+        return create_error_response('order sizes cannot be negative')
+
+    apply_market_maker_line(True, self_bid, bid_price, bid_size)
+    apply_market_maker_line(False, self_ask, ask_price, ask_size)
+
+    return create_success_response()
+
+
+@csrf_exempt
+@needs_entry
+def make_market(request, entry):
+    team_name = request.POST.get('team', None)
+    if team_name is None:
+        return create_error_response('missing team name')
+
+    team = get_team_from_identifier(team_name, entry.game.game_type)
+    if not team:
+        return create_error_response('invalid team name')
+
+    try:
+        security = Security.objects.get(market__game=entry.game, team__team=team)
+    except Security.DoesNotExist:
+        return create_error_response('no security found')
+
+    return do_make_market(request, entry, security)
+
