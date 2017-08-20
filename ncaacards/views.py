@@ -1,6 +1,6 @@
 import ncaacards.api.views as api
 from ncaacards.forms import ChangeOrderForm, CreateGameForm, TradeForm
-from ncaacards.logic import accept_trade, get_leaders, get_game, get_entry, get_team_from_identifier
+from ncaacards.logic import accept_trade, get_leaders, get_game, get_entry, get_team_from_identifier, get_entry_markets
 from ncaacards.models import *
 from trading.models import Execution, Order, process_order
 from cix.views import render_with_request_context
@@ -701,18 +701,10 @@ def market_maker(request, game_id):
         return HttpResponseRedirect('/ncaa/')
 
     rows = []
-    game_teams = GameTeam.objects.filter(game=game, team__is_eliminated=False).order_by('team__abbrev_name').select_related('team')
-    securities = Security.objects.filter(market__game=context['game'])
-    positions = { position.team_id: position.count for position in UserTeam.objects.filter(entry__id=self_entry.id) }
-    security_map = {}
-    for security in securities:
-        security_map[security.name] = security
-    for team in game_teams:
-        security = security_map[team.team.abbrev_name]
-        position = positions[team.id]
-        user_bid = security.get_bid_order(self_entry)
-        user_ask = security.get_ask_order(self_entry)
-        rows.append((team, security, position, user_bid, user_ask))
+    markets = get_entry_markets(self_entry)
+
+    for market in markets:
+        rows.append((market['team'], market['security'], market['position'], market['user_bid'], market['user_ask']))
 
     context['rows'] = rows
     

@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from ncaacards.forms import TradeForm
-from ncaacards.logic import get_team_from_identifier
+from ncaacards.logic import get_team_from_identifier, get_entry_markets
 from ncaacards.models import *
 from trading.models import Execution, Order
 import datetime
@@ -235,3 +235,28 @@ def make_market(request, entry):
 
     return do_make_market(request, entry, security)
 
+
+def get_my_markets(entry):
+    markets = []
+    for m in get_entry_markets(entry):
+        res = {
+            'team': m['team'].team.abbrev_name,
+            'position': m['position']
+        }
+
+        if m['user_bid']:
+            res['bid'] = float(m['user_bid'].price)
+            res['bid_size'] = m['user_bid'].quantity_remaining
+
+        if m['user_ask']:
+            res['ask'] = float(m['user_ask'].price)
+            res['ask_size'] = m['user_ask'].quantity_remaining
+
+        markets.append(res)
+    
+    return create_success_response(markets)
+
+@csrf_exempt
+@needs_entry
+def my_markets(request, entry):
+    return get_my_markets(entry)

@@ -1,4 +1,5 @@
-from ncaacards.models import check_limits, NcaaGame, Team, TradeComponent, UserEntry, UserTeam
+from ncaacards.models import check_limits, NcaaGame, Team, TradeComponent, UserEntry, UserTeam, GameTeam
+from trading.models import Security
 from django.db.models import Q
 import datetime
 
@@ -130,3 +131,27 @@ def get_team_from_identifier(team_id, game_type):
         return Team.objects.get(team_query)
     except Team.DoesNotExist:
         return None
+
+
+def get_entry_markets(entry):
+    rows = []
+    game_teams = GameTeam.objects.filter(game=entry.game, team__is_eliminated=False).order_by('team__abbrev_name').select_related('team')
+    securities = Security.objects.filter(market__game=entry.game)
+    positions = { position.team_id: position.count for position in UserTeam.objects.filter(entry=entry) }
+    security_map = {}
+    for security in securities:
+        security_map[security.name] = security
+    for team in game_teams:
+        security = security_map[team.team.abbrev_name]
+        position = positions[team.id]
+        user_bid = security.get_bid_order(entry)
+        user_ask = security.get_ask_order(entry)
+        rows.append({
+            'team': team,
+            'security': security,
+            'position': position,
+            'user_bid': user_bid,
+            'user_ask': user_ask
+        })
+
+    return rows
