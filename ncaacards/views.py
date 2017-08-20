@@ -706,7 +706,7 @@ def save_settings(request, game_id):
         if not setting_str:
             continue
         try:
-            setting_points = int(setting_str)
+            setting_points = float(setting_str)
         except ValueError:
             errors.append('%s is not a valid score setting' % setting_str)
         else:

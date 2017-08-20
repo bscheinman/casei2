@@ -55,7 +55,7 @@ class NcaaGame(models.Model):
 
 class ScoreType(models.Model):
     name = models.CharField(max_length=30)
-    default_score = models.IntegerField()
+    default_score = models.DecimalField(decimal_places=2, max_digits=12)
     ordering = models.IntegerField() # this is for creating a manual ordering
     game_type = models.ForeignKey(GameType, related_name='score_types')
 
@@ -68,7 +68,7 @@ class ScoreType(models.Model):
 class ScoringSetting(models.Model):
     game = models.ForeignKey(NcaaGame)
     scoreType = models.ForeignKey(ScoreType)
-    points = models.IntegerField()
+    points = models.DecimalField(decimal_places=2, max_digits=12)
 
 
 class UserEntry(models.Model):
@@ -149,7 +149,7 @@ class TeamModelAdmin(admin.ModelAdmin):
 class GameTeam(models.Model):
     game = models.ForeignKey(NcaaGame)
     team = models.ForeignKey(Team)
-    score = models.IntegerField(default=0)
+    score = models.DecimalField(decimal_places=2, max_digits=12, default=0.0)
     volume = models.IntegerField(default=0)
     estimated_score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
 
