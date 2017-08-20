@@ -1,3 +1,4 @@
+import ncaacards.api.views as api
 from ncaacards.forms import ChangeOrderForm, CreateGameForm, TradeForm
 from ncaacards.logic import accept_trade, get_leaders, get_game, get_entry, get_team_from_identifier
 from ncaacards.models import *
@@ -555,54 +556,14 @@ def leaderboard(request, game_id):
 def do_place_order(request, game_id):
     results = { 'success':False, 'errors':[], 'field_errors':{} }
     context = get_base_context(request, game_id)
-    game = context['game']
     self_entry = context.get('self_entry', None)
-    if not game:
-        results['errors'].append('No game exists with id %s' % game_id)
-    if not game.supports_stocks:
-        results['errors'].append('This game does not support stock-style trading')
     if not self_entry:
         results['errors'].append('You cannot place orders for games in which you do not have an entry')
     if request.method != 'POST':
         results['errors'].append('You must use a POST request for submitting orders')
 
     if not results['errors']:
-        form = TradeForm(request.POST)
-        if form.is_valid():
-            error = ''
-            data = form.cleaned_data
-
-            try:
-                team = get_team_from_identifier(data['team_identifier'], context['game'].game_type)
-                game_team = GameTeam.objects.get(game=context['game'], team=team)
-                if not game_team:
-                    raise Exception('There is no team with the ID %s' % team_id)
-                position = UserTeam.objects.get(entry=self_entry, team=game_team)
-
-                is_buy = data['side'] == 'buy'
-                quantity = data['quantity']
-                price = data['price']
-                total_order_points = quantity * price
-                if is_buy:
-                    if game.position_limit and quantity + position.count > game.position_limit:
-                        raise Exception('You tried to buy %s shares of %s but your current position is %s shares and the position limit is %s' %\
-                            (quantity, team.abbrev_name, position.count, game.position_limit))
-                    if game.points_limit and self_entry.extra_points - total_order_points < -1 * game.points_limit:
-                        raise Exception('This order would cost %s but you have %s raw points and the points short limit is %s' %\
-                            (total_order_points, self_entry.extra_points, game.points_limit))
-                else:
-                    if game.position_limit and position.count - quantity < -1 * game.position_limit:
-                        raise Exception('You tried to sell %s shares of %s but your current position is %s shares and the position limit is %s' %\
-                            (quantity, team.abbrev_name, position.count, game.position_limit))
-
-                order = Order.orders.create(entry=self_entry, placer=self_entry.entry_name, security=Security.objects.get(team=game_team),\
-                    price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=data['cancel_on_game'])
-                results['success'] = True
-
-            except Exception as error:
-                results['errors'].append(str(error))
-        else:
-            results['field_errors'] = form.errors
+        results = api.do_place_order(request.POST, self_entry)
 
     return HttpResponse(json.dumps(results))
 

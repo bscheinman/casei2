@@ -10,7 +10,13 @@ class TradeForm(forms.Form):
     side = forms.ChoiceField(choices=[('buy', 'Buy'), ('sell', 'Sell')])
     price = forms.CharField(max_length=10)
     quantity = forms.CharField(max_length=10)
-    cancel_on_game = forms.BooleanField(required=False)
+    cancel_on_game = forms.BooleanField(required=False, initial=True)
+
+    def clean_cancel_on_game(self):
+        if self['cancel_on_game'].html_name in self.data:
+            return self.cleaned_data['cancel_on_game']
+        else:
+            return self.fields['cancel_on_game'].initial
 
     def clean(self):
         super(TradeForm, self).clean()
@@ -19,7 +25,7 @@ class TradeForm(forms.Form):
         side = cleaned_data.get('side', '')
         price = cleaned_data.get('price', '')
         quantity = cleaned_data.get('quantity', '')
-        cancel_on_game = cleaned_data.get('cancel_on_game', False)
+        cancel_on_game = cleaned_data.get('cancel_on_game', True)
 
         if not side in ['buy', 'sell']:
             self._errors['side'] = self.error_class(['Invalid side type %s' % side])
@@ -28,7 +34,7 @@ class TradeForm(forms.Form):
             try:
                 p = Decimal(price)
                 cleaned_data['price'] = p
-            except ValueError:
+            except:
                 self._errors['price'] = self.error_class(['%s is not a valid price' % price])
                 del cleaned_data['price']
         else:
@@ -37,7 +43,7 @@ class TradeForm(forms.Form):
         if quantity:
             try:
                 q = int(quantity)
-            except ValueError:
+            except:
                 self._errors['quantity'] = self.error_class(['You must enter a valid integer quantity'])
                 del cleaned_data['quantity']
             else:
