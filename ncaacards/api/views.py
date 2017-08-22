@@ -30,17 +30,13 @@ def create_error_response(err):
 
 def needs_entry(fn):
     def wrapper(request):
-        apid_str = request.POST.get('apid', None)
-        if not apid_str:
+        try:
+            apid = uuid.UUID(request.POST['apid'])
+            entry = UserEntry.objects.get(apid=apid)
+        except (KeyError, UserEntry.DoesNotExist):
             resp = create_error_response('invalid apid')
         else:
-            try:
-                apid = uuid.UUID(apid_str)
-                entry = UserEntry.objects.get(apid=apid)
-            except:
-                resp = create_error_response('invalid apid')
-            else:
-                resp = fn(request, entry)
+            resp = fn(request, entry)
 
         return HttpResponse(json.dumps(resp))
 
@@ -237,10 +233,9 @@ def make_market(request, entry):
 
 
 def get_my_markets(entry):
-    markets = []
+    markets = {}
     for m in get_entry_markets(entry):
         res = {
-            'team': m['team'].team.abbrev_name,
             'position': m['position']
         }
 
@@ -252,7 +247,7 @@ def get_my_markets(entry):
             res['ask'] = float(m['user_ask'].price)
             res['ask_size'] = m['user_ask'].quantity_remaining
 
-        markets.append(res)
+        markets[m['team'].team.abbrev_name] = res
     
     return create_success_response(markets)
 
@@ -260,3 +255,57 @@ def get_my_markets(entry):
 @needs_entry
 def my_markets(request, entry):
     return get_my_markets(entry)
+
+
+@csrf_exempt
+@needs_entry
+def market_data(request, entry):
+    securities = Security.objects.filter(market__game=entry.game)
+    md = {}
+
+    for security in securities:
+        md[security.name] = {
+            'bid': float(security.get_bid()),
+            'bid_size': security.get_bid_size(),
+            'ask': float(security.get_ask()),
+            'ask_size': security.get_ask_size(),
+        }
+
+    return create_success_response(md)
+
+
+def to_book_order(order):
+    return {
+        'price': float(order.price),
+        'quantity': order.quantity_remaining,
+        'entry': order.entry.entry_name
+    }
+
+
+@csrf_exempt
+@needs_entry
+def get_book(request, entry):
+    try:
+        symbol = request.POST['team']
+        security = Security.objects.get(market__game=entry.game, name=symbol)
+    except (KeyError, Security.DoesNotExist):
+        return create_error_response('invalid symbol')
+
+    try:
+        depth_str = request.POST['depth']
+    except KeyError:
+        depth = 5
+    else:
+        try:
+            depth = int(depth_str)
+            if depth <= 0:
+                raise ValueError
+        except ValueError:
+            return create_error_response('invalid depth')
+
+    res = {
+        'bids': map(to_book_order, security.get_top_bids(count=depth)),
+        'asks': map(to_book_order, security.get_top_asks(count=depth)),
+    }
+
+    return create_success_response(res)

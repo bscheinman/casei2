@@ -9,4 +9,6 @@ urlpatterns = [
     url(r'^cancel_order$', views.cancel_order),
     url(r'^place_order$', views.place_order),
     url(r'^my_markets$', views.my_markets),
+    url(r'^market_data$', views.market_data),
+    url(r'^get_book$', views.get_book),
 ]
