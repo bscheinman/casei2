@@ -48,7 +48,6 @@ def wrap_response(fn, request, entry):
     except ApiException as e:
         return create_error_response(e.errors)
     except:
-        raise
         return create_error_response('internal error')
 
 def needs_entry(fn):
