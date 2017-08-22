@@ -5,13 +5,24 @@ from ncaacards.logic import get_team_from_identifier, get_entry_markets
 from ncaacards.models import *
 from trading.models import Execution, Order
 import datetime
+import itertools
 import json
+
+class ApiException(Exception):
+    def __init__(self, errors):
+        if isinstance(errors, list):
+            self.errors = errors
+        else:
+            self.errors = [errors]
+
+    def __str__(self):
+        return ', '.join(self.errors)
 
 def set_response_result(resp, result):
     resp['result'] = result
 
-def set_response_error(resp, err):
-    resp['errors'].append(err)
+def set_response_errors(resp, errors):
+    resp['errors'] = errors
     resp['success'] = False
 
 def create_base_response():
@@ -23,10 +34,22 @@ def create_success_response(result=None):
         set_response_result(resp, result)
     return resp
 
-def create_error_response(err):
+def create_error_response(errors):
     resp = create_base_response()
-    set_response_error(resp, err)
+    if isinstance(errors, list):
+        set_response_errors(resp, errors)
+    else:
+        set_response_errors(resp, [errors])
     return resp
+
+def wrap_response(fn, request, entry):
+    try:
+        return create_success_response(fn(request, entry))
+    except ApiException as e:
+        return create_error_response(e.errors)
+    except:
+        raise
+        return create_error_response('internal error')
 
 def needs_entry(fn):
     def wrapper(request):
@@ -36,7 +59,7 @@ def needs_entry(fn):
         except (KeyError, UserEntry.DoesNotExist):
             resp = create_error_response('invalid apid')
         else:
-            resp = fn(request, entry)
+            resp = wrap_response(fn, request, entry)
 
         return HttpResponse(json.dumps(resp))
 
@@ -51,7 +74,7 @@ def positions(request, entry):
     elif name_type == 'full':
         get_name = lambda p: p.team.team.full_name
     else:
-        return create_error_response('invalid name type')
+        raise ApiException('invalid name type')
 
     positions = entry.teams.select_related('team__team')
     result = {}
@@ -59,7 +82,7 @@ def positions(request, entry):
         result[get_name(position)] = position.count
     result['points'] = float(entry.extra_points)
 
-    return create_success_response(result)
+    return result
 
 @csrf_exempt
 @needs_entry
@@ -77,7 +100,7 @@ def executions(request, entry):
             'price' : float(execution.price),
         })
 
-    return create_success_response(result)
+    return result
 
 @csrf_exempt
 @needs_entry
@@ -93,73 +116,63 @@ def open_orders(request, entry):
             'cancel_on_game': order.cancel_on_game
         })
 
-    return create_success_response(result)
+    return result
 
 @csrf_exempt
 @needs_entry
 def cancel_order(request, entry):
-    order_id = request.POST.get('order_id', None)
-    if not order_id:
-        return create_error_response('invalid order id')
-
     try:
+        order_id = request.POST.get('order_id', None)
         order = Order.open_orders.get(placer=entry.entry_name, order_id=order_id)
-    except Order.DoesNotExist:
-        return create_error_response('invalid order id')
+    except (KeyError, Order.DoesNotExist):
+        raise ApiException('invalid order id')
 
     order.is_active = False
     order.save()
-
-    return create_success_response()
 
 def do_place_order(params, self_entry):
     response = create_base_response()
     game = self_entry.game
 
     if not game.supports_stocks:
-        set_response_error(response, 'This game does not support stock-style trading')
-        return response
+        raise ApiException('This game does not support stock-style trading')
 
     form = TradeForm(params)
     if not form.is_valid():
-        for field, err in form.errors.iteritems():
-            set_response_error(response, err)
-        return response
+        form_errors = []
+        for field, errors in form.errors.iteritems():
+            for error in errors:
+                form_errors.append('{0}: {1}'.format(field, error))
+        raise ApiException(form_errors)
 
     data = form.cleaned_data
 
-    try:
-        team = get_team_from_identifier(data['team_identifier'], game.game_type)
-        game_team = GameTeam.objects.get(game=game, team=team)
-        if not game_team:
-            raise Exception('There is no team with the ID %s' % team_id)
-        position = UserTeam.objects.get(entry=self_entry, team=game_team)
+    team = get_team_from_identifier(data['team_identifier'], game.game_type)
+    game_team = GameTeam.objects.get(game=game, team=team)
+    if not game_team:
+        raise ApiException('invalid team')
+    position = UserTeam.objects.get(entry=self_entry, team=game_team)
 
-        is_buy = data['side'] == 'buy'
-        quantity = data['quantity']
-        price = data['price']
-        total_order_points = quantity * price
-        if is_buy:
-            if game.position_limit and quantity + position.count > game.position_limit:
-                raise Exception('You tried to buy %s shares of %s but your current position is %s shares and the position limit is %s' %\
-                    (quantity, team.abbrev_name, position.count, game.position_limit))
-            if game.points_limit and self_entry.extra_points - total_order_points < -1 * game.points_limit:
-                raise Exception('This order would cost %s but you have %s raw points and the points short limit is %s' %\
-                    (total_order_points, self_entry.extra_points, game.points_limit))
-        else:
-            if game.position_limit and position.count - quantity < -1 * game.position_limit:
-                raise Exception('You tried to sell %s shares of %s but your current position is %s shares and the position limit is %s' %\
-                    (quantity, team.abbrev_name, position.count, game.position_limit))
+    is_buy = data['side'] == 'buy'
+    quantity = data['quantity']
+    price = data['price']
+    total_order_points = quantity * price
+    if is_buy:
+        if game.position_limit and quantity + position.count > game.position_limit:
+            raise ApiException('You tried to buy %s shares of %s but your current position is %s shares and the position limit is %s' %\
+                (quantity, team.abbrev_name, position.count, game.position_limit))
+        if game.points_limit and self_entry.extra_points - total_order_points < -1 * game.points_limit:
+            raise ApiException('This order would cost %s but you have %s raw points and the points short limit is %s' %\
+                (total_order_points, self_entry.extra_points, game.points_limit))
+    else:
+        if game.position_limit and position.count - quantity < -1 * game.position_limit:
+            raise ApiException('You tried to sell %s shares of %s but your current position is %s shares and the position limit is %s' %\
+                (quantity, team.abbrev_name, position.count, game.position_limit))
 
-        order = Order.orders.create(entry=self_entry, placer=self_entry.entry_name, security=Security.objects.get(team=game_team),\
-            price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=data['cancel_on_game'])
+    order = Order.orders.create(entry=self_entry, placer=self_entry.entry_name, security=Security.objects.get(team=game_team),\
+        price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=data['cancel_on_game'])
 
-        set_response_result(response, { 'order_id': order.order_id })
-
-    except Exception as error:
-        set_response_error(response, str(error))
-
-    return response
+    return { 'order_id': order.order_id }
 
 @csrf_exempt
 @needs_entry
@@ -174,13 +187,15 @@ def do_make_market(request, entry, security, key_suffix=None):
         key = key_prefix
         if key_suffix is not None:
             key = '{0}_{1}'.format(key_prefix, key_suffix)
-        value = request.POST.get(key, None)
-        if value is None:
-            raise Exception('missing required field %s' % key_prefix)
+        try:
+            value = request.POST[key]
+        except KeyError:
+            raise ApiException('missing required field {0}'.format(key_prefix))
+
         try:
             return cast_type(value)
         except ValueError as e:
-            raise Exception('invalid entry %s for field %s' % (value, key_prefix))
+            raise ApiException('invalid entry {0} for field {1}'.format(value, key_prefix))
 
     def apply_market_maker_line(is_buy, existing_order, price, quantity):
         if existing_order and existing_order.is_active:
@@ -196,43 +211,41 @@ def do_make_market(request, entry, security, key_suffix=None):
                 order = Order.orders.create(entry=entry, placer=entry.entry_name, security=security,
                     price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=True)
 
-    try:
-        bid_price = extract_request_value('bid', Decimal)
-        bid_size = extract_request_value('bid_size', int)
-        ask_price = extract_request_value('ask', Decimal)
-        ask_size = extract_request_value('ask_size', int)
-    except Exception as e:
-        return create_error_response(str(e))
+    bid_price = extract_request_value('bid', Decimal)
+    bid_size = extract_request_value('bid_size', int)
+    ask_price = extract_request_value('ask', Decimal)
+    ask_size = extract_request_value('ask_size', int)
 
     if bid_size < 0 or ask_size < 0:
-        return create_error_response('order sizes cannot be negative')
+        raise ApiException('order sizes cannot be negative')
 
     apply_market_maker_line(True, self_bid, bid_price, bid_size)
     apply_market_maker_line(False, self_ask, ask_price, ask_size)
-
-    return create_success_response()
 
 
 @csrf_exempt
 @needs_entry
 def make_market(request, entry):
-    team_name = request.POST.get('team', None)
-    if team_name is None:
-        return create_error_response('missing team name')
+    try:
+        team_name = request.POST['team']
+    except KeyError:
+        raise ApiException('missing team name')
 
     team = get_team_from_identifier(team_name, entry.game.game_type)
     if not team:
-        return create_error_response('invalid team name')
+        raise ApiException('invalid team name')
 
     try:
         security = Security.objects.get(market__game=entry.game, team__team=team)
     except Security.DoesNotExist:
-        return create_error_response('no security found')
+        raise ApiException('no security found')
 
     return do_make_market(request, entry, security)
 
 
-def get_my_markets(entry):
+@csrf_exempt
+@needs_entry
+def my_markets(request, entry):
     markets = {}
     for m in get_entry_markets(entry):
         res = {
@@ -249,12 +262,7 @@ def get_my_markets(entry):
 
         markets[m['team'].team.abbrev_name] = res
     
-    return create_success_response(markets)
-
-@csrf_exempt
-@needs_entry
-def my_markets(request, entry):
-    return get_my_markets(entry)
+    return markets
 
 
 @csrf_exempt
@@ -271,7 +279,7 @@ def market_data(request, entry):
             'ask_size': security.get_ask_size(),
         }
 
-    return create_success_response(md)
+    return md
 
 
 def to_book_order(order):
@@ -289,7 +297,7 @@ def get_book(request, entry):
         symbol = request.POST['team']
         security = Security.objects.get(market__game=entry.game, name=symbol)
     except (KeyError, Security.DoesNotExist):
-        return create_error_response('invalid symbol')
+        raise ApiException('invalid symbol')
 
     try:
         depth_str = request.POST['depth']
@@ -301,11 +309,11 @@ def get_book(request, entry):
             if depth <= 0:
                 raise ValueError
         except ValueError:
-            return create_error_response('invalid depth')
+            raise ApiException('invalid depth')
 
     res = {
         'bids': map(to_book_order, security.get_top_bids(count=depth)),
         'asks': map(to_book_order, security.get_top_asks(count=depth)),
     }
 
-    return create_success_response(res)
+    return res

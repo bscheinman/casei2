@@ -563,7 +563,7 @@ def do_place_order(request, game_id):
         results['errors'].append('You must use a POST request for submitting orders')
 
     if not results['errors']:
-        results = api.do_place_order(request.POST, self_entry)
+        results = api.wrap_response(api.do_place_order, request.POST, self_entry)
 
     return HttpResponse(json.dumps(results))
 
@@ -731,19 +731,14 @@ def do_make_market(request, game_id):
                 if not do_edit:
                     continue
 
-                print 'making market for ' + team.team.abbrev_name
-
                 security = security_map[team.team.abbrev_name]
-                result = api.do_make_market(request, self_entry, security, team.team.abbrev_name)
-
-                print result
-
-                if not result['success']:
-                    errors += ['{0}: {1}'.format(team.team.abbrev_name, e) for e in result['errors']]
+                try:
+                    api.do_make_market(request, self_entry, security, team.team.abbrev_name)
+                except ApiException as e:
+                    errors += ['{0}: {1}'.format(team.team.abbrev_name, err) for err in e.errors]
 
             if errors:
-                print errors
-                raise Exception()
+                raise Exception
 
     except Exception as e:
         pass
