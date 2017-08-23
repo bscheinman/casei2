@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['caseinsensitive.org']
 
 
 APPEND_SLASH=False
+LOGIN_URL='/ncaa/?show_login=1'
 
 # Application definition
 
