@@ -15,6 +15,9 @@ import json
 import re
 import uuid
 
+def login_redirect(f):
+    return login_required(f, login_url='/?show_login=1')
+
 def get_base_context(request, game_id, **kwargs):
     context = {}
     for key in kwargs:
@@ -32,6 +35,7 @@ def get_base_context(request, game_id, **kwargs):
         start_tab = request.GET.get('start_tab', '')
         if start_tab:
             context['start_tab'] = start_tab
+        context['show_login'] = request.GET.get('show_login', False)
     return context
 
 
@@ -42,7 +46,7 @@ def home(request):
     return render_with_request_context(request, 'ncaa_home.html', get_base_context(request, None))
 
 
-@login_required
+@login_redirect
 def game_home(request, game_id):
     context = get_base_context(request, game_id)
 
@@ -63,7 +67,7 @@ def game_home(request, game_id):
     return render_with_request_context(request, 'game_home.html', context)
 
 
-@login_required
+@login_redirect
 def entry_view(request, game_id, entry_id):
     game = get_game(game_id)
     self_entry = get_entry(game, request.user)
@@ -103,7 +107,7 @@ def entry_view(request, game_id, entry_id):
     return render_with_request_context(request, 'entry.html', context)
 
 
-@login_required
+@login_redirect
 def marketplace(request, game_id):
     game = get_game(game_id)
     if not game.supports_cards:
@@ -166,7 +170,7 @@ def team_list(request, game_id):
     return render_with_request_context(request, 'team_list.html', context)
 
 
-@login_required
+@login_redirect
 def leaderboard(request, game_id):
     game = get_game(game_id)
     entry = get_entry(game, request.user)
@@ -236,7 +240,7 @@ def create_team_context(request, **kwargs):
     return context
 
 
-@login_required
+@login_redirect
 def game_team_view(request, game_id, team_id):
     game = get_game(game_id)
     entry = get_entry(game, request.user)
@@ -255,7 +259,7 @@ def game_team_view(request, game_id, team_id):
 
 MAX_OFFER_SIZE = 5
 
-@login_required
+@login_redirect
 def create_offer(request, game_id, **kwargs):
     game = get_game(game_id)
     if not game.supports_cards:
@@ -294,7 +298,7 @@ def create_offer_component(team_name, count_str, game):
     
 
 
-@login_required
+@login_redirect
 def make_offer(request, game_id):
     game = get_game(game_id)
     if request.method != 'POST' or not game.supports_cards:
@@ -376,7 +380,7 @@ def make_offer(request, game_id):
     return HttpResponseRedirect('/ncaa/game/%s/offer/%s/' % (game_id, offer.id))
 
 
-@login_required
+@login_redirect
 def offer_view(request, game_id, offer_id):
     game = get_game(game_id)
     self_entry = get_entry(game, request.user)
@@ -392,13 +396,13 @@ def offer_view(request, game_id, offer_id):
     return render_with_request_context(request, 'offer_page.html', context)
 
 
-@login_required
+@login_redirect
 def create_game(request):
     context = get_base_context(request, None, game_types=GameType.objects.all())
     return render_with_request_context(request, 'create_game.html', context)
 
 
-@login_required
+@login_redirect
 def do_create_game(request):
     if request.method != 'POST':
         return HttpResponseRedirect('/ncaa/')
@@ -432,7 +436,7 @@ def do_create_game(request):
         return render_with_request_context(request, 'create_game.html', context)
 
 
-@login_required
+@login_redirect
 def game_list(request):
     entries = request.user.entries.all()
     query = ~Q(entries__in=entries)
@@ -442,7 +446,7 @@ def game_list(request):
 
 
 entry_forbidden_regex = re.compile('[^0-9a-zA-Z _]')
-@login_required
+@login_redirect
 def join_game(request):
     game_id = request.POST.get('game_id', '')
     entry_name = request.POST.get('entry_name', '')
@@ -495,7 +499,7 @@ def join_game(request):
     return HttpResponseRedirect('/ncaa/game/%s/entry/%s/' % (game_id, entry.id))
 
 
-@login_required
+@login_redirect
 def accept_offer(request, game_id, offer_id):
     game = get_game(game_id)
     self_entry = get_entry(game, request.user)
@@ -520,7 +524,7 @@ def accept_offer(request, game_id, offer_id):
     return HttpResponseRedirect('/ncaa/game/%s/entry/%s/' % (game_id, self_entry.id))
 
 
-@login_required
+@login_redirect
 def cancel_offer(request, game_id, offer_id):
     try:
         offer = TradeOffer.objects.get(id=offer_id)
@@ -543,7 +547,7 @@ def cancel_offer(request, game_id, offer_id):
     return render_with_request_context(request, 'offer_page.html', context)
 
 
-@login_required
+@login_redirect
 def leaderboard(request, game_id):
     context = get_base_context(request, game_id)
     if 'self_entry' not in context:
@@ -552,7 +556,7 @@ def leaderboard(request, game_id):
     return render_with_request_context(request, 'leaderboard.html', context)
 
 
-@login_required
+@login_redirect
 def do_place_order(request, game_id):
     results = { 'success':False, 'errors':[], 'field_errors':{} }
     context = get_base_context(request, game_id)
@@ -568,7 +572,7 @@ def do_place_order(request, game_id):
     return HttpResponse(json.dumps(results))
 
 
-@login_required
+@login_redirect
 def cancel_order(request, game_id):
     results = { 'success':False, 'errors':[] }
     if request.method != 'POST':
@@ -596,7 +600,7 @@ def cancel_order(request, game_id):
     return HttpResponse(json.dumps(results))
 
 
-@login_required
+@login_redirect
 def change_order(request, game_id):
     results = { 'success':False, 'errors':[], 'field_errors':{} }
     if request.method != 'POST':

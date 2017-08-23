@@ -30,7 +30,7 @@
                 {% if user.is_authenticated %}
                     Logged in as {{ user.username }} <a href='/do_logout/'>Logout</a>
                 {% else %}
-                    <a data-toggle='modal' href='#loginModal' class='btn btn-primary'>Login</a>
+                    <a data-toggle='modal' href='#loginModal' id='login_expander' class='btn btn-primary'>Login</a>
                     <a href='/signup/' class='btn'>Sign Up</a>
                 {% endif %}
             </p>
@@ -118,5 +118,13 @@
 <script src='{% static 'bootstrap/js/bootstrap.min.js' %}'></script>
 <script src='{% static 'jquery.form.js' %}'></script>
 <script src='{% static 'sorttable.js' %}'></script>
+
+<script type='text/javascript'>
+    {% if show_login %}
+        $(document).ready(function() {
+            $('#login_expander').click();
+        });
+    {% endif %}
+</script>
 {% block game_scripts %}{% endblock game_scripts %}
 {% endblock body %}
