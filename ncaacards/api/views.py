@@ -105,7 +105,7 @@ def executions(request, entry):
 @needs_entry
 def open_orders(request, entry):
     result = []
-    for order in Order.open_orders.filter(market__game=entry.game, placer=entry.entry_name).select_related('security'):
+    for order in Order.open_orders.filter(entry=entry).select_related('security'):
         result.append({
             'id': order.order_id,
             'team': order.security.name,
