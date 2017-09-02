@@ -298,6 +298,14 @@ class LiveGame(models.Model):
         return '%s @ %s %s' % (self.away_team.abbrev_name, self.home_team.abbrev_name, self.game_time)
 
 
+@admin.register(LiveGame)
+class LiveGameModelAdmin(admin.ModelAdmin):
+    search_fields = ['home_team__abbrev_name', 'away_team__abbrev_name']
+
+    def get_ordering(self, request):
+        return ['-game_time']
+
+
 admin.site.register(NcaaGame)
 admin.site.register(UserTeam)
 admin.site.register(ScoreType)
@@ -311,7 +319,6 @@ admin.site.register(TradeOffer)
 admin.site.register(TradeSide)
 admin.site.register(TradeComponent)
 admin.site.register(GameType)
-admin.site.register(LiveGame)
 
 
 def check_position_limits(entry, team):
