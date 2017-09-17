@@ -26,8 +26,12 @@ def get_games(week):
             cells = list(row.find_all('td'))
             away_team = extract_team(cells[0].text.split()[-1])
             home_team = extract_team(cells[1].text.split()[-1])
-            game_time = datetime.strptime(cells[2]['data-date'],
-                    '%Y-%m-%dT%H:%MZ')
+            try:
+                game_time = datetime.strptime(cells[2]['data-date'],
+                        '%Y-%m-%dT%H:%MZ')
+            except KeyError:
+                # completed games don't have this field
+                continue
             yield away_team, home_team, game_time
 
 
