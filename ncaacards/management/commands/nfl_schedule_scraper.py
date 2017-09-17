@@ -41,5 +41,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         game_type = GameType.objects.get(name='NFL 2017')
-        for away, home, game_time in nfl.get_games(options['week']):
+        for away, home, game_time in nfl.get_games(options['week'][0]):
             self.add_game(game_type, away, home, game_time)
