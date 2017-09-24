@@ -5,7 +5,7 @@ from ncaacards.models import GameType, Team, TeamScoreCount
 from util import nfl
 
 class Command(BaseCommand):
-    def update_totals(game_type, team, wins, losses, ties):
+    def update_totals(self, game_type, team, wins, losses, ties):
         team_obj = Team.objects.get(game_type=game_type, abbrev_name=team)
 
         win_total = TeamScoreCount.objects.get(team=team_obj,
@@ -24,4 +24,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         game_type = GameType.objects.get(name='NFL 2017')
         for team, wins, losses, ties in nfl.get_standings():
-            update_totals(team, wins, losses, ties)
+            self.update_totals(game_type, team, wins, losses, ties)

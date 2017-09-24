@@ -45,7 +45,7 @@ def get_standings():
     for table in soup.find_all('table', {'class': 'standings'}):
         for row in table.find_all('tr'):
             cells = list(row.find_all('td'))
-            team = cells[0].find('abbr').text
+            team = extract_team(cells[0].find('abbr').text)
             wins, losses, ties = tuple(int(cell.text) for cell in cells[1:4])
 
             yield team, wins, losses, ties
