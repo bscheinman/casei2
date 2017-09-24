@@ -34,4 +34,18 @@ def get_games(week):
                 continue
             yield away_team, home_team, game_time
 
+def get_standings_data():
+    standings_url = 'http://www.espn.com/nfl/standings'
+    return urllib2.urlopen(standings_url).read()
 
+def get_standings():
+    html = get_standings_data()
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    for table in soup.find_all('table', {'class': 'standings'}):
+        for row in table.find_all('tr'):
+            cells = list(row.find_all('td'))
+            team = cells[0].find('abbr').text
+            wins, losses, ties = tuple(int(cell.text) for cell in cells[1:4])
+
+            yield team, wins, losses, ties
