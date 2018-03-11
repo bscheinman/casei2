@@ -125,7 +125,7 @@ def get_team_from_identifier(team_id, game_type):
         num_id = int(team_id)
         team_query = team_query & Q(id=num_id)
     except ValueError:
-        team_query = team_query & Q(abbrev_name__iexact=team_id)
+        team_query = team_query & (Q(abbrev_name__iexact=team_id) | Q(full_name__iexact=team_id))
 
     try:
         return Team.objects.get(team_query)
