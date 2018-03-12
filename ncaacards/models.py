@@ -143,7 +143,7 @@ class TeamModelAdmin(admin.ModelAdmin):
     search_fields = ['full_name']
 
     def get_ordering(self, request):
-        return ['game_type', 'full_name']
+        return ['-game_type', 'full_name']
 
 
 class GameTeam(models.Model):
