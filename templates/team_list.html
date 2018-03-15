@@ -31,10 +31,15 @@
             $('#order_placer').modal();
         }
 
+        function disable_placer() {
+            document.getElementById('submit_order').disabled = true;
+        }
+
         $(document).ready(function() {
             var options = {
                 dataType: 'json',
-                success: OnTradeResponse
+                success: OnTradeResponse,
+                beforeSubmit: disable_placer
             };
 
             $('#tradeForm').ajaxForm(options);

@@ -17,13 +17,23 @@
             }
         }
 
+        function disable_placer() {
+            document.getElementById('submit_order').disabled = true;
+        }
+
         $(document).ready(function() {
             var options = {
                 dataType: 'json',
                 success: OnTradeResponse
             };
 
-            $('#tradeForm').ajaxForm(options);
+            var trade_form_options = {
+                dataType: 'json',
+                success: OnTradeResponse,
+                beforeSubmit: disable_placer
+            };
+
+            $('#tradeForm').ajaxForm(trade_form_options);
             $('#changeForm').ajaxForm(options);
             $('.cancelForm').ajaxForm(options);
         });
