@@ -42,7 +42,7 @@ class Command(BaseCommand):
             print 'created new game {0}'.format(new_game)
 
     def handle(self, *args, **options):
-        game_type = GameType.objects.get(name='Treeefort 2018')
+        game_type = GameType.objects.get(name='NCAAM 2018')
         schedule_date = datetime.date.strptime(options['date'][0], '%Y-%m-%d')
         for away, home, game_time in ncaa.get_games(options['week'][0]):
             self.add_game(game_type, away, home, game_time)
