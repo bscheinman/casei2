@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from ncaacards.forms import TradeForm
 from ncaacards.logic import get_team_from_identifier, get_entry_markets
 from ncaacards.models import *
-from trading.models import Execution, Order
+from trading.models import Execution, Order, process_order
 import datetime
 import itertools
 import json
@@ -169,7 +169,7 @@ def do_place_order(params, self_entry):
                 (quantity, team.abbrev_name, position.count, game.position_limit))
 
     order = Order.orders.create(entry=self_entry, placer=self_entry.entry_name, security=Security.objects.get(team=game_team),\
-        price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=data['cancel_on_game'])
+        price=price, quantity=quantity, quantity_remaining=quantity, is_buy=is_buy, cancel_on_game=data.get('cancel_on_game', True))
 
     return { 'order_id': order.order_id }
 
@@ -202,9 +202,11 @@ def do_make_market(request, entry, security, key_suffix=None):
                 existing_order.price = price
                 existing_order.quantity_remaining = quantity
                 existing_order.last_modified = datetime.datetime.now()
+                existing_order.save()
+                process_order(existing_order)
             else:
                 existing_order.is_active = False
-            existing_order.save()
+                existing_order.save()
         else:
             if quantity:
                 order = Order.orders.create(entry=entry, placer=entry.entry_name, security=security,
