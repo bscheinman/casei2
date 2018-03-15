@@ -202,6 +202,14 @@ class TeamScoreCount(models.Model):
         return '%s-- %s' % (self.team.full_name, self.scoreType.name)
 
 
+@admin.register(TeamScoreCount)
+class TeamScoreCountModelAdmin(admin.ModelAdmin):
+    search_fields = ['team__abbrev_name', 'team__full_name']
+
+    def get_ordering(self, request):
+        return ['-team__game_type__id', 'scoreType__ordering', 'team__full_name']
+
+
 class UserTeam(models.Model):
     entry = models.ForeignKey(UserEntry, related_name='teams')
     team = models.ForeignKey(GameTeam)
@@ -312,7 +320,6 @@ admin.site.register(ScoreType)
 admin.site.register(TradingBlock)
 admin.site.register(UserEntry)
 admin.site.register(GameOtp)
-admin.site.register(TeamScoreCount)
 admin.site.register(GameTeam)
 admin.site.register(ScoringSetting)
 admin.site.register(TradeOffer)
