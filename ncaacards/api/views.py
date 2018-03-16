@@ -86,7 +86,24 @@ def positions(request, entry):
 @csrf_exempt
 @needs_entry
 def executions(request, entry):
-    query = (Q(buy_order__placer=entry.entry_name) | Q(sell_order__placer=entry.entry_name)) & Q(security__market__name=entry.game.name)
+    query = Q(security__market__name=entry.game.name)
+
+    if request.POST.get('mine_only', False):
+        query = query & (Q(buy_order__placer=entry.entry_name) | Q(sell_order__placer=entry.entry_name))
+
+    try:
+        since_str = request.POST['since']
+    except KeyError:
+        pass
+    else:
+        try:
+            since_time = datetime.datetime.strptime(since_str, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            print 'malformatted date string {}'.format(since_str)
+            raise ApiException('malformatted date string')
+        
+        query = query & Q(time__gte=since_time)
+
     executions = Execution.objects.filter(query).order_by('time').select_related('buy_order').select_related('sell_order').select_related('security')
     result = []
     for execution in executions:
