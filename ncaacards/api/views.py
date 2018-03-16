@@ -8,6 +8,8 @@ import datetime
 import itertools
 import json
 
+API_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
 class ApiException(Exception):
     def __init__(self, errors):
         if isinstance(errors, list):
@@ -97,7 +99,7 @@ def executions(request, entry):
         pass
     else:
         try:
-            since_time = datetime.datetime.strptime(since_str, '%Y-%m-%d %H:%M:%S')
+            since_time = datetime.datetime.strptime(since_str, API_TIME_FORMAT)
         except ValueError:
             print 'malformatted date string {}'.format(since_str)
             raise ApiException('malformatted date string')
@@ -121,7 +123,7 @@ def executions(request, entry):
     for execution in reversed(executions):
         side = 'BUY' if execution.buy_order.placer == entry.entry_name else 'SELL'
         result.append({
-            'time' : str(execution.time),
+            'time' : execution.time.strftime(API_TIME_FORMAT),
             'team' : execution.security.name,
             'side' : side,
             'quantity' : execution.quantity,
