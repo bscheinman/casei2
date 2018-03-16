@@ -104,9 +104,21 @@ def executions(request, entry):
         
         query = query & Q(time__gte=since_time)
 
-    executions = Execution.objects.filter(query).order_by('time').select_related('buy_order').select_related('sell_order').select_related('security')
+    executions = Execution.objects.filter(query).order_by('-time').select_related('buy_order').select_related('sell_order').select_related('security')
+
+    try:
+        exec_count = int(request.POST['n'])
+        if exec_count <= 0:
+            raise ValueError('invalid execution count')
+    except KeyError:
+        pass
+    except ValueError:
+        raise ApiException('invalid execution count')
+    else:
+        executions = executions[:exec_count]
+
     result = []
-    for execution in executions:
+    for execution in reversed(executions):
         side = 'BUY' if execution.buy_order.placer == entry.entry_name else 'SELL'
         result.append({
             'time' : str(execution.time),
