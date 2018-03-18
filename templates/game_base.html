@@ -32,6 +32,7 @@
                 {% else %}
                     <a data-toggle='modal' href='#loginModal' id='login_expander' class='btn btn-primary'>Login</a>
                     <a href='/signup/' class='btn'>Sign Up</a>
+                    <a href='{% url 'password_reset' %}' class='btn'>Reset password</a>
                 {% endif %}
             </p>
         </div>
@@ -110,6 +111,9 @@
                     <input type='password' name='password' placeholder='password'>
                     <button id='login_form_submit' type='submit' class='btn btn-primary'>Log In</button>
                 </form>
+            </div>
+            <div>
+                <a href='{% url 'password_reset' %}'>Forgot password?</a>
             </div>
         </div>
     </div>
