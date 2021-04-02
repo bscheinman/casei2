@@ -29,15 +29,15 @@ class Command(BaseCommand):
                     game_time__lt=max_time)
 
             if existing.game_time != game_time:
-                print 'updating {0} time to {1}'.format(existing, game_time)
+                print('updating {0} time to {1}'.format(existing, game_time))
                 existing.game_time = game_time
                 existing.save()
             else:
-                print '{0} unchanged'.format(existing)
+                print('{0} unchanged'.format(existing))
         except LiveGame.DoesNotExist:
             new_game = LiveGame.objects.create(home_team=home_team,
                     away_team=away_team, game_time=game_time)
-            print 'created new game {0}'.format(new_game)
+            print('created new game {0}'.format(new_game))
 
     def handle(self, *args, **options):
         game_type = GameType.objects.get(name='NFL 2017')

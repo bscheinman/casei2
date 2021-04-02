@@ -23,7 +23,7 @@ def get_base_context(request, game_id, **kwargs):
     if game_id:
         game = get_game(game_id)
     context['game'] = game
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         context['user_games'] = NcaaGame.objects.filter(entries__user=request.user)
         #context['user_entries'] = UserEntry.objects.filter(user=request.user)
         if game:
@@ -38,7 +38,7 @@ def get_base_context(request, game_id, **kwargs):
 
 def home(request):
     entries = []
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         entries = request.user.entries.all()
     return render_with_request_context(request, 'ncaa_home.html', get_base_context(request, None))
 

@@ -41,4 +41,4 @@ class Command(NoArgsCommand):
                     loss_count.count = losses
                     loss_count.save()
             except Exception as err:
-                print 'Error processing team %s: %s' % (match.group('name'), str(err))
+                print('Error processing team %s: %s' % (match.group('name'), str(err)))

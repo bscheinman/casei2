@@ -33,7 +33,8 @@ class NcaaGame(models.Model):
     password = models.CharField(blank=True, null=True, max_length=100)
     position_limit = models.IntegerField(blank=True, null=True)
     points_limit = models.IntegerField(blank=True, null=True)
-    game_type = models.ForeignKey(GameType, related_name='games')
+    game_type = models.ForeignKey(GameType, related_name='games',
+            on_delete=models.CASCADE)
     supports_cards = models.BooleanField(default=False)
     supports_stocks = models.BooleanField(default=False)
     settings_locked = models.BooleanField(default=False)
@@ -47,7 +48,7 @@ class NcaaGame(models.Model):
             types.append('Cards')
         if self.supports_stocks:
             types.append('Stocks')
-        return string.join(types, ', ')
+        return ",".join(map(str, types))
 
     def founding_entry(self):
         return self.entries.order_by('join_time')[0]
@@ -57,7 +58,8 @@ class ScoreType(models.Model):
     name = models.CharField(max_length=30)
     default_score = models.DecimalField(decimal_places=2, max_digits=12)
     ordering = models.IntegerField() # this is for creating a manual ordering
-    game_type = models.ForeignKey(GameType, related_name='score_types')
+    game_type = models.ForeignKey(GameType, related_name='score_types',
+            on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -66,14 +68,14 @@ class ScoreType(models.Model):
         unique_together = ('ordering', 'game_type')
 
 class ScoringSetting(models.Model):
-    game = models.ForeignKey(NcaaGame)
-    scoreType = models.ForeignKey(ScoreType)
+    game = models.ForeignKey(NcaaGame, on_delete=models.CASCADE)
+    scoreType = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     points = models.DecimalField(decimal_places=2, max_digits=12)
 
 
 class UserEntry(models.Model):
-    user = models.ForeignKey(User, related_name='entries')
-    game = models.ForeignKey(NcaaGame, related_name='entries')
+    user = models.ForeignKey(User, related_name='entries', on_delete=models.PROTECT)
+    game = models.ForeignKey(NcaaGame, related_name='entries', on_delete=models.PROTECT)
     entry_name = models.CharField(max_length=50)
     extra_points = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
@@ -104,10 +106,12 @@ def generate_otp():
     return str(uuid.uuid4())
 
 class GameOtp(models.Model):
-    game = models.ForeignKey(NcaaGame, related_name='game')
+    game = models.ForeignKey(NcaaGame, related_name='game',
+            on_delete=models.CASCADE)
     pw = models.CharField(default=generate_otp, max_length=64, unique=True)
     active = models.BooleanField(default=True)
-    entry = models.ForeignKey(UserEntry, null=True, blank=True, default=None)
+    entry = models.ForeignKey(UserEntry, null=True, blank=True, default=None,
+            on_delete=models.CASCADE)
 
     def __str__(self):
         return self.pw
@@ -116,7 +120,8 @@ class GameOtp(models.Model):
 class Team(models.Model):
     full_name = models.CharField(max_length=50)
     abbrev_name = models.CharField(max_length=6)
-    game_type = models.ForeignKey(GameType, related_name='teams')
+    game_type = models.ForeignKey(GameType, related_name='teams',
+            on_delete=models.CASCADE)
     is_eliminated = models.BooleanField(default=False)
 
     class Meta:
@@ -147,8 +152,8 @@ class TeamModelAdmin(admin.ModelAdmin):
 
 
 class GameTeam(models.Model):
-    game = models.ForeignKey(NcaaGame)
-    team = models.ForeignKey(Team)
+    game = models.ForeignKey(NcaaGame, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
     score = models.DecimalField(decimal_places=2, max_digits=12, default=0.0)
     volume = models.IntegerField(default=0)
     estimated_score = models.DecimalField(decimal_places=2, max_digits=12, default=0)
@@ -194,8 +199,9 @@ class GameTeam(models.Model):
 
 
 class TeamScoreCount(models.Model):
-    team = models.ForeignKey(Team, related_name='counts')
-    scoreType = models.ForeignKey(ScoreType)
+    team = models.ForeignKey(Team, related_name='counts',
+            on_delete=models.CASCADE)
+    scoreType = models.ForeignKey(ScoreType, on_delete=models.CASCADE)
     count = models.IntegerField(default=0)
 
     def __str__(self):
@@ -211,8 +217,9 @@ class TeamScoreCountModelAdmin(admin.ModelAdmin):
 
 
 class UserTeam(models.Model):
-    entry = models.ForeignKey(UserEntry, related_name='teams')
-    team = models.ForeignKey(GameTeam)
+    entry = models.ForeignKey(UserEntry, related_name='teams',
+            on_delete=models.CASCADE)
+    team = models.ForeignKey(GameTeam, on_delete=models.CASCADE)
     count = models.IntegerField()
     net_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
 
@@ -234,7 +241,8 @@ class UserTeam(models.Model):
         self.save()
 
 class TradingBlock(models.Model):
-    entry = models.OneToOneField(UserEntry, related_name='trading_block')
+    entry = models.OneToOneField(UserEntry, related_name='trading_block',
+            on_delete=models.CASCADE)
     game_teams_desired = models.ManyToManyField(GameTeam, related_name='desired_blocks')
     game_teams_available = models.ManyToManyField(GameTeam, related_name='available_blocks')
 
@@ -247,10 +255,14 @@ class TradeSide(models.Model):
 
 
 class TradeOffer(models.Model):
-    entry = models.ForeignKey(UserEntry, related_name='proposed_trades')
-    bid_side = models.OneToOneField(TradeSide, related_name='bid_offer')
-    ask_side = models.OneToOneField(TradeSide, related_name='ask_offer')
-    accepting_user = models.ForeignKey(UserEntry, blank=True, null=True, related_name='accepted_trades')
+    entry = models.ForeignKey(UserEntry, related_name='proposed_trades',
+            on_delete=models.PROTECT)
+    bid_side = models.OneToOneField(TradeSide, related_name='bid_offer',
+            on_delete=models.PROTECT)
+    ask_side = models.OneToOneField(TradeSide, related_name='ask_offer',
+            on_delete=models.PROTECT)
+    accepting_user = models.ForeignKey(UserEntry, blank=True, null=True, related_name='accepted_trades',
+            on_delete=models.PROTECT)
     offer_time = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     accept_time = models.DateTimeField(blank=True, null=True)
@@ -288,17 +300,20 @@ class TradeOffer(models.Model):
 
 
 class TradeComponent(models.Model):
-    team = models.ForeignKey(GameTeam)
+    team = models.ForeignKey(GameTeam, on_delete=models.PROTECT)
     count = models.IntegerField()
-    offer = models.ForeignKey(TradeSide, related_name='components')
+    offer = models.ForeignKey(TradeSide, related_name='components',
+            on_delete=models.CASCADE)
 
     def get_score(self):
         return self.count * self.team.score
 
 
 class LiveGame(models.Model):
-    home_team = models.ForeignKey(Team, related_name='home_games')
-    away_team = models.ForeignKey(Team, related_name='away_games')
+    home_team = models.ForeignKey(Team, related_name='home_games',
+            on_delete=models.CASCADE)
+    away_team = models.ForeignKey(Team, related_name='away_games',
+            on_delete=models.CASCADE)
     game_time = models.DateTimeField()
     is_processed = models.BooleanField(default=False)
 

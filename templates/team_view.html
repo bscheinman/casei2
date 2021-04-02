@@ -72,7 +72,9 @@
     <div id='top_owners' class='well span3'>
         <strong>Top Owners</strong><br/>
         {% for owner, count in top_owners %}
-            {% entry_link owner %}: {{ count }} shares<br/>
+            {% if count != 0 %}
+                {% entry_link owner %}: {{ count }} shares<br/>
+            {% endif %}
         {% endfor %}
     </div>
 {% endblock main_tab %}

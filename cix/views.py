@@ -23,7 +23,7 @@ def login_page(request):
 
 
 def do_login(request):
-    if request.user.is_authenticated() or request.method != 'POST':
+    if request.user.is_authenticated or request.method != 'POST':
         return HttpResponseRedirect('/')
     error = ''
     form = LoginForm(request.POST)
@@ -49,13 +49,13 @@ def do_login(request):
     return HttpResponseRedirect(redirect_target)
 
 def signup(request):
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return HttpResponseRedirect('/')
     return render_with_request_context(request, 'signup.html', { 'form':SignupForm() })
 
 
 def do_signup(request):
-    if request.user.is_authenticated() or request.method != 'POST':
+    if request.user.is_authenticated or request.method != 'POST':
         return HttpResponseRedirect('/')
     form = SignupForm(request.POST)
     if not form.is_valid():
@@ -76,7 +76,7 @@ def signup_thanks(request):
 
 
 def do_logout(request):
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         logout(request)
     return HttpResponseRedirect('/')
 

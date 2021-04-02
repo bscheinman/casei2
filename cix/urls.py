@@ -18,13 +18,13 @@ urlpatterns = [
     url(r'^do_logout/$', views.do_logout),
     url(r'^verify/([a-zA-Z0-9]+)/$', views.verify),
     url(r'^ncaa/', include('ncaacards.urls')),
-    url(r'^password_reset/$', auth_views.password_reset, {
+    url(r'^password_reset/$', auth_views.PasswordResetView.as_view() , {
         'post_reset_redirect': '/password_reset_sent/',
     }, name='password_reset'),
-    url(r'^password_reset_sent/$', auth_views.password_reset_done, name='password_reset_done'),
-    url(r'^password_reset_complete/$', auth_views.password_reset_complete, name='password_reset_complete'),
-    url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
-	auth_views.password_reset_confirm, name='password_reset_confirm'),
+    url(r'^password_reset_sent/$', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    url(r'^password_reset_complete/$', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/$',
+        auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

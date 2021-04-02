@@ -114,7 +114,7 @@ class CreateGameForm(forms.Form):
         type_choices.append((gtype, gtype))
 
     game_name = forms.CharField(max_length=50)
-    game_type = forms.ChoiceField(type_choices)
+    game_type = forms.ChoiceField(choices=type_choices)
     position_limit = forms.CharField(max_length=10, required=False)
     points_limit = forms.CharField(max_length=10, required=False)
     game_password = forms.CharField(widget=forms.PasswordInput, required=False)

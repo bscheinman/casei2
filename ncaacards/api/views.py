@@ -101,7 +101,7 @@ def executions(request, entry):
         try:
             since_time = datetime.datetime.strptime(since_str, API_TIME_FORMAT)
         except ValueError:
-            print 'malformatted date string {}'.format(since_str)
+            print('malformatted date string {}'.format(since_str))
             raise ApiException('malformatted date string')
         
         query = query & Q(time__gte=since_time)

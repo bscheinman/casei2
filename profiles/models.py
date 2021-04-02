@@ -9,7 +9,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     join_date = models.DateTimeField(auto_now_add=True)
     verification_id = UUIDField(auto=True)
     is_verified = models.BooleanField(default=False)

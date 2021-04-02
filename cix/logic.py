@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from urllib import urlencode
-from urllib2 import urlopen
+from urllib.parse import urlencode
+import requests
 
 
 def shorten_url(long_url):
@@ -10,7 +10,7 @@ def shorten_url(long_url):
     args = { 'login':username, 'apiKey':apiKey, 'longUrl':long_url, 'format':'txt' }
     encoded_args = urlencode(args)
     bitly_url = 'http://api.bit.ly/v3/shorten?%s' % encoded_args
-    short_url = urlopen(bitly_url).read()
+    short_url = requests.get(bitly_url).text
     return short_url.rstrip()
 
 

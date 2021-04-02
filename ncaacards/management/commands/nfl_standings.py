@@ -16,7 +16,7 @@ class Command(BaseCommand):
         win_total.count = wins
         tie_total.count = ties
 
-        print 'updated {0} to {1} wins and {2} ties'.format(team, wins, ties)
+        print('updated {0} to {1} wins and {2} ties'.format(team, wins, ties))
 
         win_total.save()
         tie_total.save()
